@@ -13,12 +13,19 @@ charset = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 fonts = ['fonts/Ballbase.ttf' , 'fonts/GiantRobotArmy-Medium.ttf' , 'fonts/Manustype.ttf' , 'fonts/NANOTYPE.ttf' , 'fonts/PixelGrunge.ttf' , 'fonts/Reappeat.ttf' , 'fonts/Savior1.ttf' , 'fonts/Thruster-Regular.ttf' , 'fonts/To The Point.ttf']
 
+borderBufferPercentage = 12
+warpLimitPercentage = 10
+
 def getTextAndAtts():
 	length = textLength
 	if (customText):
 		length = len(customText)
 
 	sectorSize = int(width / length)
+
+	# As width is generally greater than height, exaggerate the sectorBuffer (by 2x) and minimize the heightBuffer (by 1/2):
+	sectorBuffer = int(int(sectorSize * (borderBufferPercentage / 100)) * 2)
+	heightBuffer = int(int(height * (borderBufferPercentage / 100)) * 0.5)
 
 	charsAndAtts = []
 
@@ -34,11 +41,12 @@ def getTextAndAtts():
 		minFontSize = int(maxFontSize / 1.9)
 		charList.append(randint(minFontSize , maxFontSize))
 
-		if (i == (length - 1)):
-			hPosition = randint((sectorSize * i) , int(sectorSize * (i + 0.8)))
+		if ((i == (length - 1)) or (i == 0)):
+			hPosition = randint(((sectorSize * i) + sectorBuffer) , ((sectorSize * (i + 1)) - sectorBuffer))
 		else:
 			hPosition = randint((sectorSize * i) , (sectorSize * (i + 1)))
-		vPosition = randint(0 , (height - charList[1]))
+
+		vPosition = randint((0 + heightBuffer) , ((height - charList[1]) - heightBuffer))
 		charList.append(hPosition)
 		charList.append(vPosition)
 
@@ -53,17 +61,37 @@ def generate():
 	g = randint(0 , 255)
 	b = randint(0 , 255)
 
+	# Create the image:
 	captcha = Image.new('RGB' , (width , height) , (r , g , b))
 	d = ImageDraw.Draw(captcha)
 
 	# Change color shade before adding text/noise:
 	multValue = choice([(randint(0 , 90) / 100) , (randint(110 , 200) / 100)])
-	print(multValue)
 
-	r = (int(r * multValue) % 255)
-	g = (int(g * multValue) % 255)
-	b = (int(b * multValue) % 255)
+	nr = (int(r * multValue) % 255)
+	ng = (int(g * multValue) % 255)
+	nb = (int(b * multValue) % 255)
 
+	# Add the captcha text:
 	for charAndAtts in getTextAndAtts():
 		f = ImageFont.truetype(choice(fonts) , charAndAtts[1])
-		d.text((charAndAtts[2] , charAndAtts[3]) , charAndAtts[0] , font = f , fill = (r , g , b))
+		d.text((charAndAtts[2] , charAndAtts[3]) , charAndAtts[0] , font = f , fill = (nr , ng , nb))
+
+	# Warp the image:
+	widthLimit = int(width * (warpLimitPercentage / 100))
+	heightLimit = int(height * (warpLimitPercentage / 100))
+	
+	nwX = randint((0 - widthLimit) , widthLimit)
+	nwY = randint((0 - heightLimit) , heightLimit)
+
+	swX = randint((0 - widthLimit) , widthLimit)
+	swY = randint((height - heightLimit) , (height + heightLimit))
+
+	seX = randint((width - widthLimit) , (width + widthLimit))
+	seY = randint((height - heightLimit) , (height + heightLimit))
+
+	neX = randint((width - widthLimit) , (width + widthLimit))
+	neY = randint((0 - heightLimit) , (0 + heightLimit))
+
+
+	captcha = captcha.transform((width , height) , Image.QUAD , data = (nwX , nwY , swX , swY , seX , seY , neX , neY) , fillcolor = (r , g , b))
