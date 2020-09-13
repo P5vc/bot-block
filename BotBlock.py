@@ -48,9 +48,22 @@ def getTextAndAtts():
 
 
 def generate():
-	captcha = Image.new('RGB' , (width , height) , (255 , 255 , 255))
+	# Choose background color:
+	r = randint(0 , 255)
+	g = randint(0 , 255)
+	b = randint(0 , 255)
+
+	captcha = Image.new('RGB' , (width , height) , (r , g , b))
 	d = ImageDraw.Draw(captcha)
+
+	# Change color shade before adding text/noise:
+	multValue = choice([(randint(0 , 90) / 100) , (randint(110 , 200) / 100)])
+	print(multValue)
+
+	r = (int(r * multValue) % 255)
+	g = (int(g * multValue) % 255)
+	b = (int(b * multValue) % 255)
 
 	for charAndAtts in getTextAndAtts():
 		f = ImageFont.truetype(choice(fonts) , charAndAtts[1])
-		d.text((charAndAtts[2] , charAndAtts[3]) , charAndAtts[0] , font = f , fill = (0 , 0 , 0))
+		d.text((charAndAtts[2] , charAndAtts[3]) , charAndAtts[0] , font = f , fill = (r , g , b))
