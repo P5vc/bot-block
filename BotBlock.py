@@ -78,9 +78,11 @@ def generate():
 	snb = (int(b * multValue) % 255)
 
 	# Add the captcha text:
+	captchaText = ''
 	for charAndAtts in getTextAndAtts():
 		f = ImageFont.truetype(choice(fonts) , charAndAtts[1])
 		d.text((charAndAtts[2] , charAndAtts[3]) , charAndAtts[0] , font = f , fill = choice([(nr , ng , nb) , (snr , sng , snb)]))
+		captchaText += charAndAtts[0]
 
 	# Add noise:
 	for i in range(randint(0 , maxNoise)):
@@ -106,3 +108,6 @@ def generate():
 
 
 	captcha = captcha.transform((width , height) , Image.QUAD , data = (nwX , nwY , swX , swY , seX , seY , neX , neY) , fillcolor = (r , g , b))
+
+
+	return captchaText
