@@ -1,58 +1,83 @@
 from PIL import Image , ImageFont , ImageDraw
 from secrets import choice
-from bcrypt import hashpw , gensalt
 from random import randint
 from base64 import b64encode
+from io import BytesIO
 
+
+
+########################## User-Defined Settings ##########################
+
+############### Text Attributes ###############
 customText = ''
+randomTextLength = 6
 
-textLength = 7
+charset = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789' # Commonly-confused characters discluded
+fonts = ['fonts/Ballbase.ttf' , 'fonts/GiantRobotArmy-Medium.ttf' , 'fonts/Manustype.ttf' , 'fonts/NANOTYPE.ttf' , 'fonts/PixelGrunge.ttf' ,  'fonts/Savior1.ttf' , 'fonts/Thruster-Regular.ttf' , 'fonts/To The Point.ttf'] # Only open source fonts used; note: these fonts are not necessarily under the perview of this code's MIT license, and may be licensed differently, such as under SIL International
+############ End of Text Attributes ###########
 
-width = 600
+
+############## Image Attributes ###############
+width = 750
 height = 250
 
-charset = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+imageFormat = 'PNG'
 
-fonts = ['fonts/Ballbase.ttf' , 'fonts/GiantRobotArmy-Medium.ttf' , 'fonts/Manustype.ttf' , 'fonts/NANOTYPE.ttf' , 'fonts/PixelGrunge.ttf' ,  'fonts/Savior1.ttf' , 'fonts/Thruster-Regular.ttf' , 'fonts/To The Point.ttf']
+leftRightEdgesBufferPercentage = 25
+topBottomEdgesBufferPercentage = 5
 
-borderBufferPercentage = 12
 warpLimitPercentage = 10
 maxNoise = 10
+########### End of Image Attributes ###########
 
-saltRounds = 17
-saveAsHashText = False # Requires passing only the desired save path (with a trailing forward slash and no subsequent filename) when calling generate
 
+########### Authentication Settings ###########
+caseSensitivity = False # Due to font variations, case-sensitivity is not recommended; when set to False, the entire character set will continue to be used for image rendering, however the characters returned by generate and used for hashing will always be lowercase
+
+hashText = False # Can add a significant amount of inefficiency
+nameIsTextHash = False # Requires passing only the desired save path (with a trailing forward slash and no subsequent filename) when calling generate
+saltRounds = 18 # The higher the number the greater the security and (consequently) lower the efficiency
+######## End of Authentication Settings #######
+
+####################### End of User-Defined Settings ######################
+
+
+
+# Generate randomized text (including text position, size, and color):
 def getTextAndAtts():
-	length = textLength
+	length = randomTextLength
 	if (customText):
 		length = len(customText)
 
 	sectorSize = int(width / length)
-
-	# As width is generally greater than height, exaggerate the sectorBuffer (by 2x) and minimize the heightBuffer (by 1/2):
-	sectorBuffer = int(int(sectorSize * (borderBufferPercentage / 100)) * 2)
-	heightBuffer = int(int(height * (borderBufferPercentage / 100)) * 0.5)
+	sectorBuffer = int(sectorSize * (leftRightEdgesBufferPercentage / 100))
+	heightBuffer = int(height * (topBottomEdgesBufferPercentage / 100))
 
 	charsAndAtts = []
-
 	for i in range(length):
 		charList = []
 
+		# select character:
 		if (customText):
 			charList.append(customText[i])
 		else:
 			charList.append(choice(charset))
 
-		maxFontSize = int(sectorSize * 1.15)
-		minFontSize = int(maxFontSize / 1.9)
+		# select random font size:
+		maxFontSize = int(sectorSize * 1.35)
+		minFontSize = int(maxFontSize / 1.75)
 		charList.append(randint(minFontSize , maxFontSize))
 
-		if ((i == (length - 1)) or (i == 0)):
-			hPosition = randint(((sectorSize * i) + sectorBuffer) , ((sectorSize * (i + 1)) - (sectorBuffer * 2)))
+		# select a rough, random character position (and implement buffers where necessary):
+		if (i == 0):
+			hPosition = randint(sectorBuffer , (sectorSize * (i + 1)))
+		elif (i == (length - 1)):
+			hPosition = randint(((sectorSize * i) - sectorBuffer) , ((sectorSize * (i + 1)) - sectorBuffer))
 		else:
 			hPosition = randint((sectorSize * i) , (sectorSize * (i + 1)))
 
 		vPosition = randint((0 + heightBuffer) , ((height - charList[1]) - heightBuffer))
+
 		charList.append(hPosition)
 		charList.append(vPosition)
 
@@ -61,17 +86,18 @@ def getTextAndAtts():
 	return charsAndAtts
 
 
-def generate(saveFullPath , hashText = False):
-	# Choose background color:
+# Generate a CAPTCHA:
+def generate(saveFullPath = ''):
+	# Choose a random background color:
 	r = randint(0 , 255)
 	g = randint(0 , 255)
 	b = randint(0 , 255)
 
-	# Create the image:
+	# Instantiate the image:
 	captcha = Image.new('RGB' , (width , height) , (r , g , b))
 	d = ImageDraw.Draw(captcha)
 
-	# Add color shades before adding text/noise:
+	# Generate random color shades that aren't too similar to the background color:
 	multValue = choice([(randint(0 , 80) / 100) , (randint(120 , 200) / 100)])
 	nr = (int(r * multValue) % 255)
 	ng = (int(g * multValue) % 255)
@@ -82,7 +108,7 @@ def generate(saveFullPath , hashText = False):
 	sng = (int(g * multValue) % 255)
 	snb = (int(b * multValue) % 255)
 
-	# Add the captcha text:
+	# Add the text:
 	captchaText = ''
 	for charAndAtts in getTextAndAtts():
 		f = ImageFont.truetype(choice(fonts) , charAndAtts[1])
@@ -93,7 +119,7 @@ def generate(saveFullPath , hashText = False):
 	for i in range(randint(0 , maxNoise)):
 		startX = randint(0 , width)
 		startY = randint(0 , height)
-		d.arc([(startX , startY) , (randint(startX , width) , randint(startY , height))] , randint(0 , 359) , randint(0 , 359) , width = randint(1 , 3) , fill = choice([(nr , ng , nb) , (snr , sng , snb)]))
+		d.arc([(startX , startY) , (randint(startX , width) , randint(startY , height))] , randint(0 , 359) , randint(0 , 359) , width = randint(1 , 4) , fill = choice([(nr , ng , nb) , (snr , sng , snb)]))
 
 	# Warp the image:
 	widthLimit = int(width * (warpLimitPercentage / 100))
@@ -111,17 +137,31 @@ def generate(saveFullPath , hashText = False):
 	neX = randint((width - widthLimit) , (width + widthLimit))
 	neY = randint((0 - heightLimit) , (0 + heightLimit))
 
-
 	captcha = captcha.transform((width , height) , Image.QUAD , data = (nwX , nwY , swX , swY , seX , seY , neX , neY) , fillcolor = (r , g , b))
 
+	# Remove case sensitivity, if necessary:
+	if (not(caseSensitivity)):
+		captchaText = captchaText.lower()
 
+	# Hash the text, if necessary:
 	hashedText = b''
 	if (hashText):
-		hashedText = hashpw(captchaText.encode() , gensalt(saltRounds))
-		hashedTextB64 = b64encode(hashedText).decode()
-		if (saveAsHashText):
-			captcha.save((saveFullPath + hashedTextB64) , 'PNG')
-			return captchaText , hashedTextB64
+		from bcrypt import hashpw , gensalt
 
-	captcha.save(saveFullPath)
-	return captchaText , hashedText
+		hashedText = hashpw(captchaText.encode() , gensalt(saltRounds))
+
+	# Save the CAPTCHA:
+	base64EncodedFile = b''
+	if (saveFullPath):
+		if ((nameIsTextHash) and (hashText)):
+			# Base64 encode the hash to make it filename friendly:
+			hashedTextB64 = b64encode(hashedText).decode()
+			captcha.save((saveFullPath , hashedTextB64) , imageFormat)
+		else:
+			captcha.save(saveFullPath , imageFormat)
+	else:
+		ioObj = BytesIO()
+		captcha.save(ioObj , imageFormat)
+		base64EncodedFile = b64encode(ioObj.getvalue())
+
+	return captchaText , hashedText , base64EncodedFile
