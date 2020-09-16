@@ -1,10 +1,12 @@
 from PIL import Image , ImageFont , ImageDraw
 from secrets import choice
+from bcrypt import hashpw , gensalt
 from random import randint
+from base64 import b64encode
 
 customText = ''
 
-textLength = 5
+textLength = 7
 
 width = 600
 height = 250
@@ -16,6 +18,9 @@ fonts = ['fonts/Ballbase.ttf' , 'fonts/GiantRobotArmy-Medium.ttf' , 'fonts/Manus
 borderBufferPercentage = 12
 warpLimitPercentage = 10
 maxNoise = 10
+
+saltRounds = 17
+saveAsHashText = True # Requires passing only the desired save path (with a trailing forward slash and no subsequent filename) when calling generate
 
 def getTextAndAtts():
 	length = textLength
@@ -56,7 +61,7 @@ def getTextAndAtts():
 	return charsAndAtts
 
 
-def generate():
+def generate(saveFullPath , hashText = False):
 	# Choose background color:
 	r = randint(0 , 255)
 	g = randint(0 , 255)
@@ -110,4 +115,13 @@ def generate():
 	captcha = captcha.transform((width , height) , Image.QUAD , data = (nwX , nwY , swX , swY , seX , seY , neX , neY) , fillcolor = (r , g , b))
 
 
-	return captchaText
+	hashedText = b''
+	if (hashText):
+		hashedText = hashpw(captchaText.encode() , gensalt(saltRounds))
+		hashedTextB64 = b64encode(hashedText).decode()
+		if (saveAsHashText):
+			captcha.save((saveFullPath + hashedTextB64) , 'PNG')
+			return captchaText , hashedTextB64
+			
+	captcha.save(saveFullPath)
+	return captchaText , hashedText
