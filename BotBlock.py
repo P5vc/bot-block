@@ -20,7 +20,7 @@ warpLimitPercentage = 10
 maxNoise = 10
 
 saltRounds = 17
-saveAsHashText = True # Requires passing only the desired save path (with a trailing forward slash and no subsequent filename) when calling generate
+saveAsHashText = False # Requires passing only the desired save path (with a trailing forward slash and no subsequent filename) when calling generate
 
 def getTextAndAtts():
 	length = textLength
@@ -98,7 +98,7 @@ def generate(saveFullPath , hashText = False):
 	# Warp the image:
 	widthLimit = int(width * (warpLimitPercentage / 100))
 	heightLimit = int(height * (warpLimitPercentage / 100))
-	
+
 	nwX = randint((0 - widthLimit) , widthLimit)
 	nwY = randint((0 - heightLimit) , heightLimit)
 
@@ -122,6 +122,6 @@ def generate(saveFullPath , hashText = False):
 		if (saveAsHashText):
 			captcha.save((saveFullPath + hashedTextB64) , 'PNG')
 			return captchaText , hashedTextB64
-			
+
 	captcha.save(saveFullPath)
 	return captchaText , hashedText
