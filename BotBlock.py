@@ -13,7 +13,7 @@ customText = ''
 randomTextLength = 6
 
 charset = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789' # Commonly-confused characters discluded
-fonts = ['fonts/Ballbase.ttf' , 'fonts/GiantRobotArmy-Medium.ttf' , 'fonts/Manustype.ttf' , 'fonts/NANOTYPE.ttf' , 'fonts/PixelGrunge.ttf' ,  'fonts/Savior1.ttf' , 'fonts/Thruster-Regular.ttf' , 'fonts/To The Point.ttf'] # Only open source fonts used; note: these fonts are not necessarily under the perview of this code's MIT license, and may be licensed differently, such as under SIL International
+fonts = ['fonts/Amatic-Bold.ttf' , 'fonts/TungusFont_Tinet.ttf'] # Only open source fonts used; note: these fonts are not necessarily under the perview of this code's MIT license, and may be licensed differently, such as under SIL International
 ############ End of Text Attributes ###########
 
 
@@ -24,7 +24,7 @@ height = 250
 imageFormat = 'PNG'
 
 leftRightEdgesBufferPercentage = 25
-topBottomEdgesBufferPercentage = 5
+bottomEdgeBufferPercentage = 5
 
 warpLimitPercentage = 10
 maxNoise = 10
@@ -51,7 +51,7 @@ def getTextAndAtts():
 
 	sectorSize = int(width / length)
 	sectorBuffer = int(sectorSize * (leftRightEdgesBufferPercentage / 100))
-	heightBuffer = int(height * (topBottomEdgesBufferPercentage / 100))
+	heightBuffer = int(height * (bottomEdgeBufferPercentage / 100))
 
 	charsAndAtts = []
 	for i in range(length):
@@ -76,7 +76,7 @@ def getTextAndAtts():
 		else:
 			hPosition = randint((sectorSize * i) , (sectorSize * (i + 1)))
 
-		vPosition = randint((0 + heightBuffer) , ((height - charList[1]) - heightBuffer))
+		vPosition = randint(0 , ((height - charList[1]) - heightBuffer))
 
 		charList.append(hPosition)
 		charList.append(vPosition)
