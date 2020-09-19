@@ -13,7 +13,7 @@ customText = ''
 randomTextLength = 6
 
 charset = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789' # Commonly-confused characters discluded
-fonts = ['fonts/Amatic-Bold.ttf' , 'fonts/TungusFont_Tinet.ttf'] # Only open source fonts used; note: these fonts are not necessarily under the perview of this code's MIT license, and may be licensed differently, such as under SIL International
+fonts = ['fonts/Amatic-Bold.ttf' , 'fonts/TungusFont_Tinet.ttf' , 'fonts/LifeSavers-Bold.ttf'] # Only open source fonts used; note: these fonts are not necessarily under the perview of this code's MIT license, and may be licensed differently, such as under SIL International
 ############ End of Text Attributes ###########
 
 
