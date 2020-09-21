@@ -22,7 +22,7 @@ BotBlock's efficiency will vary greatly, depending on server hardware and user s
 
 Using BotBlock is as simple as cloning the repository (`git clone https://github.com/P5vc/BotBlock.git`) and then importing BotBlock into your Python scripts. From there, you may edit/modify any of the following default settings, to fit your needs:
 
-```
+```python3
 customText = ''
 randomTextLength = 6
 charset = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'
@@ -44,14 +44,14 @@ saltRounds = 18
 
 Generate a simple CAPTCHA using the default settings, and save the image to a variable as base64-encoded bytes:
 
-```python
+```python3
 import BotBlock
 text , hash , imageB64 = BotBlock.generate()
 ```
 
 Generate a simple CAPTCHA, then save it to your `tmp` directory as a `jpeg` file:
 
-```python
+```python3
 import BotBlock
 BotBlock.imageFormat = 'JPEG'
 text , hash , imageB64 = BotBlock.generate('/tmp/image.jpeg')
@@ -59,7 +59,7 @@ text , hash , imageB64 = BotBlock.generate('/tmp/image.jpeg')
 
 Generate a simple CAPTCHA, then hash the randomized text and save the image to the `tmp` directory with the filename as the hash (we'll have no need to save the values returned by `BotBlock.generate()`):
 
-```python
+```python3
 import BotBlock
 BotBlock.hashText = True
 BotBlock.nameIsTextHash = True
