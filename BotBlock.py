@@ -156,7 +156,7 @@ def generate(saveFullPath = ''):
 		if ((nameIsTextHash) and (hashText)):
 			# Base64 encode the hash to make it filename friendly:
 			hashedTextB64 = b64encode(hashedText).decode()
-			captcha.save((saveFullPath , hashedTextB64) , imageFormat)
+			captcha.save((saveFullPath + hashedTextB64) , imageFormat)
 		else:
 			captcha.save(saveFullPath , imageFormat)
 	else:
