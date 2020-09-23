@@ -42,6 +42,13 @@ saltRounds = 18
 
 ## Examples
 
+Generate a simple CAPTCHA using the default settings, then save it:
+
+```python3
+import BotBlock
+text , hash , imageB64 = BotBlock.generate('/tmp/image.png')
+```
+
 Generate a simple CAPTCHA using the default settings, and save the image to a variable as base64-encoded bytes:
 
 ```python3
