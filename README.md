@@ -67,6 +67,6 @@ BotBlock.generate('/tmp/')
 ```
 
 ### Example Images
-![Sample Captcha #1](/docs/sample1.jpeg)
-![Sample Captcha #2](/docs/sample2.jpeg)
-![Sample Captcha #3](/docs/sample3.jpeg)
+![Sample Captcha #1](/examples/sample1.png)
+![Sample Captcha #2](/examples/sample2.png)
+![Sample Captcha #3](/examples/sample3.png)
