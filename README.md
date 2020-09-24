@@ -65,3 +65,8 @@ BotBlock.hashText = True
 BotBlock.nameIsTextHash = True
 BotBlock.generate('/tmp/')
 ```
+
+### Example Images
+![Sample Captcha #1](/docs/sample1.jpeg)
+![Sample Captcha #2](/docs/sample2.jpeg)
+![Sample Captcha #3](/docs/sample3.jpeg)
