@@ -12,7 +12,7 @@
 
 ## About
 
-BotBlock's goal is to provide a modern, privacy-respecting, CAPTCHA solution, to mitigate the harm that can be caused by bots. Unlike traditional CAPTCHA's, BotBlock is meant to be self-hosted, and does not reply on any type of traffic analysis: it provides a simple challenge and response.
+BotBlock's goal is to provide a modern, privacy-respecting, CAPTCHA solution, to mitigate the harm that can be caused by bots. Unlike traditional CAPTCHA's, BotBlock is meant to be self-hosted, and does not rely on any type of traffic analysis: it provides a simple challenge and response.
 
 BotBlock is for websites that do not wish to send user data to third parties, and are looking for an easy-to-implement solution. BotBlock is written in Python, and designed for use with Django.
 
@@ -20,7 +20,7 @@ BotBlock's efficiency will vary greatly, depending on server hardware and user s
 
 ## Usage
 
-Using BotBlock is as simple as cloning the repository (`git clone https://github.com/P5vc/BotBlock.git`) and then importing BotBlock into your Python scripts. From there, you may edit/modify any of the following default settings, to fit your needs:
+Using BotBlock is as simple as cloning the repository (`git clone https://github.com/P5vc/BotBlock.git`) and importing BotBlock into your Python scripts. From there, you may edit/modify any of the following default settings, to fit your needs:
 
 ```python3
 customText = ''
@@ -72,3 +72,9 @@ BotBlock.hashText = True
 BotBlock.nameIsTextHash = True
 BotBlock.generate('/tmp/')
 ```
+
+### Example Images
+
+![Sample Captcha #1](/examples/sample1.png "First Sample Captcha Image")
+![Sample Captcha #2](/examples/sample2.png "Second Sample Captcha Image")
+![Sample Captcha #3](/examples/sample3.png "Third Sample Captcha Image")
