@@ -26,6 +26,7 @@ imageFormat = 'PNG'
 leftRightEdgesBufferPercentage = 25
 bottomEdgeBufferPercentage = 5
 
+enableWarp = False
 warpLimitPercentage = 10
 maxNoise = 10
 ########### End of Image Attributes ###########
@@ -122,22 +123,23 @@ def generate(saveFullPath = ''):
 		d.arc([(startX , startY) , (randint(startX , width) , randint(startY , height))] , randint(0 , 359) , randint(0 , 359) , width = randint(1 , 4) , fill = choice([(nr , ng , nb) , (snr , sng , snb)]))
 
 	# Warp the image:
-	widthLimit = int(width * (warpLimitPercentage / 100))
-	heightLimit = int(height * (warpLimitPercentage / 100))
+	if (enableWarp):
+		widthLimit = int(width * (warpLimitPercentage / 100))
+		heightLimit = int(height * (warpLimitPercentage / 100))
 
-	nwX = randint((0 - widthLimit) , widthLimit)
-	nwY = randint((0 - heightLimit) , heightLimit)
+		nwX = randint((0 - widthLimit) , widthLimit)
+		nwY = randint((0 - heightLimit) , heightLimit)
 
-	swX = randint((0 - widthLimit) , widthLimit)
-	swY = randint((height - heightLimit) , (height + heightLimit))
+		swX = randint((0 - widthLimit) , widthLimit)
+		swY = randint((height - heightLimit) , (height + heightLimit))
 
-	seX = randint((width - widthLimit) , (width + widthLimit))
-	seY = randint((height - heightLimit) , (height + heightLimit))
+		seX = randint((width - widthLimit) , (width + widthLimit))
+		seY = randint((height - heightLimit) , (height + heightLimit))
 
-	neX = randint((width - widthLimit) , (width + widthLimit))
-	neY = randint((0 - heightLimit) , (0 + heightLimit))
+		neX = randint((width - widthLimit) , (width + widthLimit))
+		neY = randint((0 - heightLimit) , (0 + heightLimit))
 
-	captcha = captcha.transform((width , height) , Image.QUAD , data = (nwX , nwY , swX , swY , seX , seY , neX , neY) , fillcolor = (r , g , b))
+		captcha = captcha.transform((width , height) , Image.QUAD , data = (nwX , nwY , swX , swY , seX , seY , neX , neY) , fillcolor = (r , g , b))
 
 	# Remove case sensitivity, if necessary:
 	if (not(caseSensitivity)):

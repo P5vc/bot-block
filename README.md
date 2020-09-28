@@ -32,6 +32,7 @@ height = 250
 imageFormat = 'PNG'
 leftRightEdgesBufferPercentage = 25
 bottomEdgeBufferPercentage = 5
+enableWarp = False
 warpLimitPercentage = 10
 maxNoise = 10
 caseSensitivity = False
@@ -42,7 +43,7 @@ saltRounds = 18
 
 ## Examples
 
-Generate a simple CAPTCHA using the default settings, then save it:
+Generate a simple CAPTCHA using the default settings, then save it to the `tmp` directory:
 
 ```python3
 import BotBlock
@@ -56,12 +57,21 @@ import BotBlock
 text , hash , imageB64 = BotBlock.generate()
 ```
 
-Generate a simple CAPTCHA, then save it to your `tmp` directory as a `jpeg` file:
+Generate a simple CAPTCHA, then save it to the `tmp` directory as a `jpeg` file:
 
 ```python3
 import BotBlock
 BotBlock.imageFormat = 'JPEG'
 text , hash , imageB64 = BotBlock.generate('/tmp/image.jpeg')
+```
+
+Generate a CAPTCHA with custom text and image warping enabled, then save it to the `tmp` directory:
+
+```python3
+import BotBlock
+BotBlock.customText = 'Hello'
+BotBlock.enableWarp = True
+BotBlock.generate('/tmp/image.png')
 ```
 
 Generate a simple CAPTCHA, then hash the randomized text and save the image to the `tmp` directory with the filename as the hash (we'll have no need to save the values returned by `BotBlock.generate()`):
