@@ -35,6 +35,12 @@ maxNoise = 10
 ########### Authentication Settings ###########
 caseSensitivity = False # Due to font variations, case-sensitivity is not recommended; when set to False, the entire character set will continue to be used for image rendering, however the characters returned by generate and used for hashing will always be lowercase
 
+
+# Encryption:
+encryptText = False
+encryptionKey = b''
+
+# Hashing:
 hashText = False # Can add a significant amount of inefficiency
 nameIsTextHash = False # Requires passing only the desired save path (with a trailing forward slash and no subsequent filename) when calling generate
 saltRounds = 18 # The higher the number the greater the security and (consequently) lower the efficiency
@@ -89,6 +95,9 @@ def getTextAndAtts():
 
 # Generate a CAPTCHA:
 def generate(saveFullPath = ''):
+	# Set global variables:
+	global encryptionKey
+
 	# Choose a random background color:
 	r = randint(0 , 255)
 	g = randint(0 , 255)
@@ -145,6 +154,18 @@ def generate(saveFullPath = ''):
 	if (not(caseSensitivity)):
 		captchaText = captchaText.lower()
 
+	# Encrypt the text, if necessary:
+	encryptedText = b''
+	if (encryptText):
+		from cryptography.fernet import Fernet
+
+		if (not(encryptionKey)):
+			encryptionKey = Fernet.generate_key()
+
+		f = Fernet(encryptionKey)
+
+		encryptedText = f.encrypt(captchaText.encode())
+
 	# Hash the text, if necessary:
 	hashedText = b''
 	if (hashText):
@@ -166,4 +187,4 @@ def generate(saveFullPath = ''):
 		captcha.save(ioObj , imageFormat)
 		base64EncodedFile = b64encode(ioObj.getvalue())
 
-	return captchaText , hashedText , base64EncodedFile
+	return captchaText , encryptedText , hashedText , base64EncodedFile
