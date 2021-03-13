@@ -3,6 +3,8 @@ from secrets import choice
 from random import randint
 from base64 import b64encode
 from io import BytesIO
+from uuid import uuid4
+from time import time
 
 
 
@@ -38,7 +40,11 @@ caseSensitivity = False # Due to font variations, case-sensitivity is not recomm
 
 # Encryption:
 encryptText = False
-encryptionKey = b''
+encryptionKey = b'' # Will be generated automatically (and securely) if left blank
+replayAttackProtection = True # When enabled, the same BotBlock instance must be used to generate and verify all CAPTCHA's
+captchaTimeout = 1800 # In seconds
+validUUIDs = {} # This value is not meant to be modified... but could be to coordinate multiple BotBlock instances
+
 
 # Hashing:
 hashText = False # Can add a significant amount of inefficiency
@@ -96,7 +102,7 @@ def getTextAndAtts():
 # Generate a CAPTCHA:
 def generate(saveFullPath = ''):
 	# Set global variables:
-	global encryptionKey
+	global encryptionKey , validUUIDs
 
 	# Choose a random background color:
 	r = randint(0 , 255)
@@ -164,7 +170,12 @@ def generate(saveFullPath = ''):
 
 		f = Fernet(encryptionKey)
 
-		encryptedText = f.encrypt(captchaText.encode())
+		if (replayAttackProtection):
+			uuid = str(uuid4())
+			validUUIDs[uuid] = time()
+			encryptedText = f.encrypt((uuid + captchaText).encode())
+		else:
+			encryptedText = f.encrypt(captchaText.encode())
 
 	# Hash the text, if necessary:
 	hashedText = b''
@@ -192,18 +203,34 @@ def generate(saveFullPath = ''):
 
 # Verify user response:
 def verify(userInput , encryptedOrHashedText):
+	global validUUIDs
 	if (encryptText):
 		if (encryptionKey):
 			from cryptography.fernet import Fernet
 
 			f = Fernet(encryptionKey)
 
+			correctText = f.decrypt(encryptedOrHashedText).decode()
+
+			if (replayAttackProtection):
+				# Clean up expired UUIDs:
+				currentTime = time()
+				for uuid in validUUIDs:
+					if ((validUUIDs[uuid] + captchaTimeout) < currentTime):
+						validUUIDs.pop(uuid)
+
+				# Validate UUID:
+				if (correctText[0:36] in validUUIDs):
+					validUUIDs.pop(correctText[0:36])
+					correctText = correctText[36:]
+				else:
+					return False
+
 			if (caseSensitivity):
-				if (userInput == f.decrypt(encryptedOrHashedText).decode()):
-					return True
-			else:
-				if (userInput.lower() == f.decrypt(encryptedOrHashedText).decode().lower()):
-					return True
+				correctText = correctText.lower()
+
+			if (userInput == correctText):
+				return True
 
 			return False
 
