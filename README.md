@@ -43,6 +43,8 @@ nameIsTextHash = False
 saltRounds = 18
 ```
 
+> Note: You will need to install `Pillow` in order for BotBlock to work. If you wish to use the encryption feature, then `cryptography` will be required. Likewise, `bcrypt` must be installed if you wish to use the hashing functionality. These dependencies can be installed via the following command: `pip3 install Pillow cryptography bcrypt`.
+
 ## Examples
 
 Generate a simple CAPTCHA using the default settings, then save it to the `tmp` directory:
