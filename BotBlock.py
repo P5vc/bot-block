@@ -187,7 +187,7 @@ def generate(saveFullPath = ''):
 		captcha.save(ioObj , imageFormat)
 		base64EncodedFile = b64encode(ioObj.getvalue())
 
-	return captchaText , encryptedText , hashedText , base64EncodedFile
+	return {'plainText' : captchaText , 'encryptedText' : encryptedText , 'hashedText' : hashedText , 'b64Image' : base64EncodedFile}
 
 
 # Verify user response:
