@@ -20,7 +20,7 @@ BotBlock's efficiency will vary greatly, depending on server hardware and user s
 
 ## Usage
 
-Using BotBlock is as simple as cloning the repository (`git clone https://github.com/P5vc/BotBlock.git`) or copying the main, `BotBlock.py` file, and then importing BotBlock into your Python scripts. From there, you may edit/modify any of the following default settings, to fit your needs:
+Using BotBlock is as simple as cloning the repository (`git clone https://github.com/P5vc/BotBlock.git`) or copying the main, `BotBlock.py` and font files, and then importing BotBlock into your Python scripts. From there, you may edit/modify any of the following default settings, to fit your needs:
 
 ```python3
 customText = ''
