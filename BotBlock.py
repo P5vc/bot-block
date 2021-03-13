@@ -188,3 +188,31 @@ def generate(saveFullPath = ''):
 		base64EncodedFile = b64encode(ioObj.getvalue())
 
 	return captchaText , encryptedText , hashedText , base64EncodedFile
+
+
+# Verify user response:
+def verify(userInput , encryptedOrHashedText):
+	if (encryptText):
+		if (encryptionKey):
+			from cryptography.fernet import Fernet
+
+			f = Fernet(encryptionKey)
+
+			if (caseSensitivity):
+				if (userInput == f.decrypt(encryptedOrHashedText).decode()):
+					return True
+			else:
+				if (userInput.lower() == f.decrypt(encryptedOrHashedText).decode().lower()):
+					return True
+
+			return False
+
+	if (hashText):
+		from bcrypt import checkpw
+
+		if (caseSensitivity):
+			return checkpw(userInput.encode() , encryptedOrHashedText)
+		else:
+			return checkpw(userInput.lower().encode() , encryptedOrHashedText)
+
+	return False
