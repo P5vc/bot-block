@@ -226,8 +226,8 @@ def verify(userInput , encryptedOrHashedText):
 				else:
 					return False
 
-			if (caseSensitivity):
-				correctText = correctText.lower()
+			if (not(caseSensitivity)):
+				userInput = userInput.lower()
 
 			if (userInput == correctText):
 				return True
