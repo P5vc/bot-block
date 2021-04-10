@@ -35,7 +35,7 @@ maxNoise = 10
 
 
 ########### Authentication Settings ###########
-caseSensitivity = False # Due to font variations, case-sensitivity is not recommended; when set to False, the entire character set will continue to be used for image rendering, however the characters returned by generate and used for hashing will always be lowercase
+caseSensitivity = False # Due to font variations, case-sensitivity is not recommended; when set to False, the entire character set will continue to be used for image rendering, however the characters returned by generate will always be lowercase
 
 
 # Encryption:
@@ -43,13 +43,7 @@ encryptText = False
 encryptionKey = b'' # Will be generated automatically (and securely) if left blank
 replayAttackProtection = True # When enabled, the same BotBlock instance must be used to generate and verify all CAPTCHA's
 captchaTimeout = 1800 # In seconds
-validUUIDs = {} # This value is not meant to be modified... but could be to coordinate multiple BotBlock instances
-
-
-# Hashing:
-hashText = False # Can add a significant amount of inefficiency
-nameIsTextHash = False # Requires passing only the desired save path (with a trailing forward slash and no subsequent filename) when calling generate
-saltRounds = 18 # The higher the number the greater the security and (consequently) lower the efficiency
+validUUIDs = {} # This value is not meant to be modified... but could be in order to sync multiple BotBlock instances
 ######## End of Authentication Settings #######
 
 ####################### End of User-Defined Settings ######################
@@ -177,32 +171,20 @@ def generate(saveFullPath = ''):
 		else:
 			encryptedText = f.encrypt(captchaText.encode())
 
-	# Hash the text, if necessary:
-	hashedText = b''
-	if (hashText):
-		from bcrypt import hashpw , gensalt
-
-		hashedText = hashpw(captchaText.encode() , gensalt(saltRounds))
-
 	# Save the CAPTCHA:
 	base64EncodedFile = b''
 	if (saveFullPath):
-		if ((nameIsTextHash) and (hashText)):
-			# Base64 encode the hash to make it filename friendly:
-			hashedTextB64 = b64encode(hashedText).decode()
-			captcha.save((saveFullPath + hashedTextB64) , imageFormat)
-		else:
-			captcha.save(saveFullPath , imageFormat)
+		captcha.save(saveFullPath , imageFormat)
 	else:
 		ioObj = BytesIO()
 		captcha.save(ioObj , imageFormat)
 		base64EncodedFile = b64encode(ioObj.getvalue())
 
-	return {'plainText' : captchaText , 'encryptedText' : encryptedText , 'hashedText' : hashedText , 'b64Image' : base64EncodedFile}
+	return {'plainText' : captchaText , 'encryptedText' : encryptedText , 'b64Image' : base64EncodedFile}
 
 
-# Verify user response:
-def verify(userInput , encryptedOrHashedText):
+# Verify user response (when encryption is enabled):
+def verify(userInput , encryptedText):
 	global validUUIDs
 	if (encryptText):
 		if (encryptionKey):
@@ -210,7 +192,7 @@ def verify(userInput , encryptedOrHashedText):
 
 			f = Fernet(encryptionKey)
 
-			correctText = f.decrypt(encryptedOrHashedText).decode()
+			correctText = f.decrypt(encryptedText).decode()
 
 			if (replayAttackProtection):
 				# Clean up expired UUIDs:
@@ -233,13 +215,5 @@ def verify(userInput , encryptedOrHashedText):
 				return True
 
 			return False
-
-	if (hashText):
-		from bcrypt import checkpw
-
-		if (caseSensitivity):
-			return checkpw(userInput.encode() , encryptedOrHashedText)
-		else:
-			return checkpw(userInput.lower().encode() , encryptedOrHashedText)
 
 	return False

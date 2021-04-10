@@ -41,12 +41,9 @@ encryptionKey = b''
 replayAttackProtection = True
 captchaTimeout = 1800
 validUUIDs = []
-hashText = False
-nameIsTextHash = False
-saltRounds = 18
 ```
 
-> Note: You will need to install `Pillow` in order for BotBlock to work. If you wish to use the encryption feature, then `cryptography` will be required. Likewise, `bcrypt` must be installed if you wish to use the hashing functionality. These dependencies can be installed via the following command: `pip3 install Pillow cryptography bcrypt`.
+> Note: You will need to install `Pillow` in order for BotBlock to work. If you wish to use the encryption feature, then `cryptography` will be required. These dependencies can be installed via the following command: `pip3 install Pillow cryptography bcrypt`.
 
 ## Examples
 
@@ -95,15 +92,6 @@ if (responseCorrect):
 	print('The response was correct.')
 else:
 	print('The response was incorrect.')
-```
-
-Generate a simple CAPTCHA, then hash the randomized text and save the image to the `tmp` directory with the filename as the hash (we'll have no need to save the values returned by `BotBlock.generate()`):
-
-```python3
-import BotBlock
-BotBlock.hashText = True
-BotBlock.nameIsTextHash = True
-BotBlock.generate('/tmp/')
 ```
 
 ### Example Images
