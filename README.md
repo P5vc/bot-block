@@ -43,7 +43,7 @@ captchaTimeout = 1800
 validUUIDs = []
 ```
 
-> Note: You will need to install `Pillow` in order for BotBlock to work. If you wish to use the encryption feature, then `cryptography` will be required. These dependencies can be installed via the following command: `pip3 install Pillow cryptography bcrypt`.
+> Note: You will need to install `Pillow` in order for BotBlock to work. If you wish to use the encryption feature, then `cryptography` will be required. These dependencies can be installed via the following command: `pip3 install Pillow cryptography`.
 
 ## Examples
 
@@ -93,6 +93,11 @@ if (responseCorrect):
 else:
 	print('The response was incorrect.')
 ```
+
+### Production Examples
+
+- [Bad Apple](https://github.com/P5vc/BadAppleBackend/blob/main/BadApple/mainSite/views.py "Bad Apple")
+- [Priveasy](https://github.com/P5vc/PriveasyWebserverBackend/blob/main/Priveasy/mainSite/views.py "Priveasy")
 
 ### Example Images
 
