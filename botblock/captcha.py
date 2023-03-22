@@ -24,6 +24,12 @@ class Captcha():
     def __init__(self, settings = None):
         """Generates a CAPTCHA with all of the corresponding metadata"""
 
+        self._character_colors_evaluated = 0
+        self._character_position_corrections = 0
+        self._font_size_total = 0
+        self._generation = 0
+        self._image_data_size = 0
+        self._layers_of_noise = 0
         self.update_settings(settings)
 
     def _add_noise(self):
@@ -39,10 +45,13 @@ class Captcha():
                 ]
             )
             if noise_type == 'arc':
+                self._layers_of_noise += 1
                 self._draw_arc()
             elif noise_type == 'line':
+                self._layers_of_noise += 1
                 self._draw_line()
             elif noise_type == 'points':
+                self._layers_of_noise += 1
                 self._draw_points()
             else:
                 continue
@@ -181,10 +190,11 @@ class Captcha():
                 587 * background_color[1] +
                 114 * background_color[2]
             ) / 1000
-            counter = 0
+            counter = -1
             while True:
                 counter += 1
-                if (counter == 10000):
+                self._character_colors_evaluated += 1
+                if counter == 10000:
                     raise RuntimeError('Cannot find color with high enough contrast to background')
                 proposed_color = (
                     randrange(256), # Red color value
@@ -220,10 +230,12 @@ class Captcha():
         typeface = secure_choice(self._settings._FONTS)
         default_size = self._settings._FONT_SIZES[typeface]
         if self._settings._FONT_SIZE_SHIFT_PERCENTAGE:
-            offset = secure_randbelow(self._settings._FONT_SIZE_SHIFT_PERCENTAGE * 2) - self._settings._FONT_SIZE_SHIFT_PERCENTAGE
+            offset = secure_randbelow(self._settings._FONT_SIZE_SHIFT_PERCENTAGE * 2) \
+                - self._settings._FONT_SIZE_SHIFT_PERCENTAGE
             font_size = round(default_size + (default_size * (offset / 100)))
         else:
             font_size = default_size
+        self._font_size_total += font_size
         return ImageFont.truetype(typeface, font_size)
 
     def _get_text_and_attributes(self):
@@ -306,6 +318,7 @@ class Captcha():
             left_edge = text_and_attributes[index][2] - get_horizontal_extension(index)
             neighbor_right_edge = text_and_attributes[index - 1][2] + get_horizontal_extension(index - 1)
             if neighbor_right_edge > left_edge:
+                self._character_position_corrections += 1
                 text_and_attributes[index - 1][2] -= neighbor_right_edge - left_edge
             else:
                 gap_size = left_edge - neighbor_right_edge
@@ -316,6 +329,7 @@ class Captcha():
             right_edge = text_and_attributes[index][2] + get_horizontal_extension(index)
             neighbor_left_edge = text_and_attributes[index + 1][2] - get_horizontal_extension(index + 1)
             if neighbor_left_edge < right_edge:
+                self._character_position_corrections += 1
                 text_and_attributes[index + 1][2] += right_edge - neighbor_left_edge
             else:
                 gap_size = neighbor_left_edge - right_edge
@@ -327,12 +341,14 @@ class Captcha():
         left_edge = text_and_attributes[0][2] - get_horizontal_extension(0)
         if left_edge < 0:
             for i in range(index_largest_gap_to_right + 1):
+                self._character_position_corrections += 1
                 text_and_attributes[i][2] -= left_edge
         # If the last character gets cut off, shift it and all the preceding characters
         # (up to the largest gap) to the left, until the character is no longer cut off:
         right_edge = text_and_attributes[text_length - 1][2] + get_horizontal_extension(text_length - 1)
         if right_edge > self._size[0]:
             for i in reversed(range(index_largest_gap_to_right + 1, text_length)):
+                self._character_position_corrections += 1
                 text_and_attributes[i][2] -= right_edge - self._size[0]
 
         # Shift characters that are cut off by the top or bottom edges vertically, until
@@ -341,9 +357,11 @@ class Captcha():
             vertical_extension = get_vertical_extension(i)
             top = text_and_attributes[i][3] - vertical_extension
             if top < 0:
+                self._character_position_corrections += 1
                 text_and_attributes[i][3] -= top
             bottom = text_and_attributes[i][3] + vertical_extension
             if bottom > self._size[1]:
+                self._character_position_corrections += 1
                 text_and_attributes[i][3] -= (bottom - self._size[1])
 
         return text_and_attributes
@@ -355,20 +373,40 @@ class Captcha():
             io = BytesIO()
             self.save(io)
             self._base64 = b64encode(io.getvalue()).decode()
+            self._image_data_size = len(self._base64)
         return self._base64
 
     def generate(self):
         """Generates, or regenerates and replaces, the CAPTCHA and its metadata"""
 
+        self._character_colors_evaluated = 0
         while True:
+            self._character_position_corrections = 0
+            self._font_size_total = 0
+            self._layers_of_noise = 0
             self._create_image()
+            # Catch exception raised when no compliant text colors can be found:
             try:
                 self._draw_text()
-                self._add_noise()
             except RuntimeError:
                 continue
+            self._add_noise()
             self._clean_up()
             break
+        self._generation += 1
+
+    def get_stats(self):
+        """Returns configuration and statistical information about this Captcha instance, as a dictionary"""
+
+        return {
+            'Average Font Size': round(self._font_size_total / self._settings._TEXT_LENGTH, 2),
+            'Character Colors Evaluated': self._character_colors_evaluated,
+            'Character Position Corrections': self._character_position_corrections,
+            'Generation': self._generation,
+            'Image Data Size': self._image_data_size,
+            'Layers of Noise': self._layers_of_noise,
+            'Settings': self._settings.get_settings(),
+        }
 
     def get_settings(self):
         """Returns the Settings instance used to generate the CAPTCHA"""
@@ -379,6 +417,24 @@ class Captcha():
         """Returns the CAPTCHA's solution in plaintext"""
 
         return self._text
+
+    def print_stats(self, return_string = False):
+        """Prints configuration and statistical information about this Captcha instance"""
+
+        stats = self.get_stats()
+        stats_output = 'BOTBLOCK CAPTCHA INSTANCE\n\n'
+        stats_output += f"    CAPTCHA Number for this Instance: {stats['Generation']}\n"
+        stats_output += f"    Average Font Size per Character: {stats['Average Font Size']}\n"
+        stats_output += f"    Number of Character Colors Evaluated: {stats['Character Colors Evaluated']}\n"
+        stats_output += f"    Number of Corrections to Character Positions: {stats['Character Position Corrections']}\n"
+        stats_output += f"    Image Data Size (In Bytes): {stats['Image Data Size']}\n"
+        stats_output += f"    Layers of Noise Applied: {stats['Layers of Noise']}\n"
+        stats_output += '\n    Settings:\n'
+        stats_output += ('    ' + self._settings._pretty_format_settings(True).replace('\n', '\n    '))
+        if return_string:
+            return stats_output
+        else:
+            print(stats_output)
 
     def save(self, full_path):
         """Saves the generated CAPTCHA to a specified file"""
@@ -400,6 +456,12 @@ class Captcha():
         else:
             self._settings = Settings()
         self.generate()
+
+    def __repr__(self):
+        """Returns a string that represents this Captcha instance"""
+
+        return self.print_stats(True)
+
 
 class Engine():
     """A backend for handling CAPTCHA configuration, creation, and validation"""
