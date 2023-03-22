@@ -501,35 +501,39 @@ class Engine():
 
         while self._stop_signal.qsize() == 0:
             sleep(0.5)
+            captcha_instances = []
             if self._modified_settings.qsize() != 0:
                 new_settings = self._modified_settings.get()
-                # Delete all of the current Captcha instances:
+                # Remove all of the Captcha instances from the queues:
                 for _ in range(self._settings._POOL_SIZE):
                     if self._stop_signal.qsize() != 0:
                         break
                     while True:
-                        captcha_deleted = False
+                        captcha_removed = False
                         if self._used_captchas.qsize():
                             try:
-                                self._used_captchas.get(timeout = 0.1)
-                                captcha_deleted = True
+                                captcha = self._used_captchas.get(timeout = 0.1)
+                                captcha_instances.append(captcha)
+                                captcha_removed = True
                             except Empty:
                                 pass
-                        if (not captcha_deleted) and self._fresh_captchas.qsize():
+                        if (not captcha_removed) and self._fresh_captchas.qsize():
                             try:
-                                self._fresh_captchas.get(timeout = 0.1)
-                                captcha_deleted = True
+                                captcha = self._fresh_captchas.get(timeout = 0.1)
+                                captcha_instances.append(captcha)
+                                captcha_removed = True
                             except Empty:
                                 pass
-                        if captcha_deleted or (self._stop_signal.qsize() != 0):
+                        if captcha_removed or (self._stop_signal.qsize() != 0):
                             break
 
-                # Regenerate all Captcha instances with the new settings:
+                # Update all of the Captcha instances with the new settings:
                 self._settings = new_settings
-                for _ in range(self._settings._POOL_SIZE):
+                for captcha in captcha_instances:
                     if self._stop_signal.qsize() != 0:
                         break
-                    self._fresh_captchas.put(Captcha(settings = self._settings))
+                    captcha.update_settings(self._settings)
+                    self._fresh_captchas.put(captcha)
 
         # Close all queues before terminating:
         self._fresh_captchas.close()
