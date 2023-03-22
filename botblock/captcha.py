@@ -1,4 +1,4 @@
-"""Contains the classes required to configure and initialize the Bot Block backend"""
+"""Contains the classes required to configure and initialize the BotBlock backend"""
 
 from base64 import b64decode, b64encode
 from io import BytesIO
@@ -731,7 +731,7 @@ class Settings():
             else:
                 self._FONT_SIZES[typeface] = font_size
 
-    def _pretty_format_settings(self):
+    def _pretty_format_settings(self, exclude_engine_settings = False):
         """Creates a human readable string of the current settings"""
 
         final_output = ''
@@ -740,12 +740,22 @@ class Settings():
         for setting in settings:
             if len(setting) > max_setting_name_length:
                 max_setting_name_length = len(setting)
-            if type(settings[setting]) == str:
-                # Visually indicate that this value is a string (especially helpful for empty strings):
-                settings[setting] = f"'{settings[setting]}'"
         for setting in settings:
-            trailing_spaces = ' ' * (max_setting_name_length - len(setting) + 2)
-            final_output += f'\t{setting}{trailing_spaces}= {settings[setting]}\n'
+            if exclude_engine_settings:
+                if setting in ['CASE_SENSITIVE', 'LIFETIME', 'POOL_SIZE']:
+                    continue
+            trailing_spaces = ' ' * (max_setting_name_length - len(setting) + 1)
+            # Visually indicate that this value is a string (especially helpful for empty strings):
+            if type(settings[setting]) == str:
+                settings[setting] = f"'{settings[setting]}'"
+            # Break down lists to print one item per line:
+            if type(settings[setting]) == list and len(settings[setting]) > 1:
+                final_output += f'    {setting}{trailing_spaces}= [\n'
+                for list_item in settings[setting]:
+                    final_output += f'    {" " * len(setting)}{trailing_spaces}      \'{list_item}\',\n'
+                final_output += f'    {" " * len(setting)}{trailing_spaces}  ]\n'
+            else:
+                final_output += f'    {setting}{trailing_spaces}= {settings[setting]}\n'
         return final_output[:-1]
 
     def compare_efficiency(self, settings = None, test_length = 300):
@@ -1078,4 +1088,4 @@ class Settings():
     def __repr__(self):
         """Returns a string that represents this Settings instance"""
 
-        return 'Bot Block Settings Object Instance\n\nCurrent Settings:\n' + self._pretty_format_settings()
+        return 'BOTBLOCK SETTINGS INSTANCE\n\nCurrent Settings:\n' + self._pretty_format_settings()
