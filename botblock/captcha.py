@@ -12,7 +12,7 @@ from random import randrange
 from secrets import choice as secure_choice
 from secrets import randbelow as secure_randbelow
 from threading import Lock, Thread
-from time import sleep, perf_counter_ns
+from time import perf_counter_ns, sleep, time
 
 from cryptography.fernet import Fernet, InvalidToken
 from PIL import Image, ImageDraw, ImageFont
@@ -476,6 +476,10 @@ class Engine():
                 raise TypeError(f'The "settings" argument supplied must be an instance of "Settings", not a "{type(settings)}"')
         else:
             self._settings = Settings()
+        self._creation_time = time()
+        self._get_queries = 0
+        self._validate_queries = 0
+        self._captcha_solves = 0
         self._shut_down = False
         self._fernet = Fernet(Fernet.generate_key())
         self._blob_to_validate = Queue(maxsize = 1)
@@ -496,7 +500,7 @@ class Engine():
             self._fresh_captchas.put(Captcha(settings = self._settings))
 
         while self._stop_signal.qsize() == 0:
-            sleep(1)
+            sleep(0.5)
             if self._modified_settings.qsize() != 0:
                 new_settings = self._modified_settings.get()
                 # Delete all of the current Captcha instances:
@@ -651,6 +655,7 @@ class Engine():
         if save_path:
             new_captcha.save(save_path)
         self._used_captchas.put(new_captcha)
+        self._get_queries += 1
         return {
             'base64_captcha': captcha_as_base64,
             'encrypted_blob': timestamp_and_encrypted_solution,
@@ -661,10 +666,123 @@ class Engine():
 
         return self._settings
 
+    def get_stats(self):
+        """Returns configuration and statistical information about this Engine instance, as a dictionary"""
+        if self._shut_down:
+            self._final_stats['Shut Down'] = True
+            self._final_stats['Fresh CAPTCHAs'] = 0
+            self._final_stats['Used CAPTCHAs'] = 0
+            return self._final_stats
+        else:
+            stats = {'Shut Down': self._shut_down}
+            stats['Active Total'] = int(time() - self._creation_time)
+            tmp_active_time = int(stats['Active Total'])
+            stats['Active Days'] = tmp_active_time // (60 * 60 * 24)
+            tmp_active_time -= stats['Active Days'] * 60 * 60 * 24
+            stats['Active Hours'] = tmp_active_time // (60 * 60)
+            tmp_active_time -= stats['Active Hours'] * 60 * 60
+            stats['Active Minutes'] = tmp_active_time // 60
+            tmp_active_time -= stats['Active Minutes'] * 60
+            stats['Active Seconds'] = tmp_active_time
+            stats['Fresh CAPTCHAs'] = self._fresh_captchas.qsize()
+            stats['Used CAPTCHAs'] = self._used_captchas.qsize()
+            stats['CAPTCHAs Distributed'] = self._get_queries
+            stats['Validation Attempts'] = self._validate_queries
+            stats['CAPTCHA Solves'] = self._captcha_solves
+            stats['Generations/Hour'] = round(
+                stats['CAPTCHAs Distributed'] /
+                (stats['Active Total'] / (60 * 60)), 2
+            )
+            stats['Validations/Hour'] = round(
+                stats['Validation Attempts'] /
+                (stats['Active Total'] / (60 * 60)), 2
+            )
+            stats['Solves/Hour'] = round(
+                stats['CAPTCHA Solves'] /
+                (stats['Active Total'] / (60 * 60)), 2
+            )
+            total_font_sizes = 0
+            total_colors_evaluated = 0
+            total_position_corrections = 0
+            total_generations = 0
+            total_data_sizes = 0
+            total_noise_layers = 0
+            available_captcha_instances = min(
+                stats['Fresh CAPTCHAs'] + stats['Used CAPTCHAs'],
+                self._settings._POOL_SIZE
+            )
+            captcha_instances = []
+            for _ in range(available_captcha_instances):
+                captcha_instances.append(self._fresh_captchas.get())
+            for captcha in captcha_instances:
+                captcha_stats = captcha.get_stats()
+                total_font_sizes += captcha_stats['Average Font Size']
+                total_colors_evaluated += captcha_stats['Character Colors Evaluated']
+                total_position_corrections += captcha_stats['Character Position Corrections']
+                total_generations += captcha_stats['Generation']
+                total_data_sizes += captcha_stats['Image Data Size']
+                total_noise_layers += captcha_stats['Layers of Noise']
+                self._fresh_captchas.put(captcha)
+            stats['Captcha Instance Averages'] = {
+                'Average Font Size': round(total_font_sizes / available_captcha_instances, 2),
+                'Character Colors Evaluated': round(total_colors_evaluated / available_captcha_instances, 2),
+                'Character Position Corrections': round(total_position_corrections / available_captcha_instances, 2),
+                'Generation': round(total_generations / available_captcha_instances, 2),
+                'Image Data Size': round(total_data_sizes / available_captcha_instances, 2),
+                'Layers of Noise': round(total_noise_layers / available_captcha_instances, 2),
+            }
+            stats['Settings'] = self._settings.get_settings()
+            return stats
+
     def is_shut_down(self):
         """Returns True if the Engine instance has been shut down, and False if not"""
 
         return self._shut_down
+
+    def print_stats(self, return_string = False):
+        """Prints configuration and statistical information about this Engine instance"""
+
+        stats = self.get_stats()
+        stats_output = 'BOTBLOCK ENGINE INSTANCE\n\n'
+        if stats['Shut Down']:
+            stats_output += '    Shut Down: Yes\n'
+        else:
+            stats_output += '    Shut Down: No\n'
+        stats_output += f"    Active: {stats['Active Days']} days, "
+        stats_output += f"{stats['Active Hours']} hours, "
+        stats_output += f"{stats['Active Minutes']} minutes, "
+        stats_output += f"and {stats['Active Seconds']} seconds\n"
+        if self._shut_down:
+            stats_output += f"\n    Pool Size: 0\n"
+        else:
+            stats_output += f"\n    Pool Size: {stats['Settings']['POOL_SIZE']}\n"
+        stats_output += f"    Fresh CAPTCHAs in Pool: {stats['Fresh CAPTCHAs']}\n"
+        stats_output += f"    Used CAPTCHAs in Pool: {stats['Used CAPTCHAs']}\n"
+        stats_output += f"\n    CAPTCHAs Distributed: {stats['CAPTCHAs Distributed']}\n"
+        stats_output += f"    Validation Attempts: {stats['Validation Attempts']}\n"
+        stats_output += f"    CAPTCHA Solves: {stats['CAPTCHA Solves']}\n"
+        stats_output += f"\n    CAPTCHAs Generated per Hour: {stats['Generations/Hour']}\n"
+        stats_output += f"    Validation Attempts per Hour: {stats['Validations/Hour']}\n"
+        stats_output += f"    CAPTCHA Solves per Hour: {stats['Solves/Hour']}\n"
+        stats_output += "\n    Average Stats per Captcha Instance in Pool:\n"
+        stats_output += '        Average number of CAPTCHAs generated per Captcha Instance: '
+        stats_output += f"{stats['Captcha Instance Averages']['Generation']}\n"
+        stats_output += '        Average Font Size per Character per CAPTCHA: '
+        stats_output += f"{stats['Captcha Instance Averages']['Average Font Size']}\n"
+        stats_output += '        Average Number of Character Colors Evaluated per CAPTCHA: '
+        stats_output += f"{stats['Captcha Instance Averages']['Character Colors Evaluated']}\n"
+        stats_output += '        Average Number of Corrections to Character Positions per CAPTCHA: '
+        stats_output += f"{stats['Captcha Instance Averages']['Character Position Corrections']}\n"
+        stats_output += '        Average Image Data Size (In Bytes) per CAPTCHA: '
+        stats_output += f"{stats['Captcha Instance Averages']['Image Data Size']}\n"
+        stats_output += '        Average Number of Layers of Noise Applied to Each CAPTCHA: '
+        stats_output += f"{stats['Captcha Instance Averages']['Layers of Noise']}\n"
+        stats_output += '\n    Settings:\n'
+        stats_output += ('    ' + self._settings._pretty_format_settings().replace('\n', '\n    '))
+        if return_string:
+            return stats_output
+        else:
+            print(stats_output)
 
     def shut_down(self):
         """Prepares the Engine to be gracefully destroyed"""
@@ -672,6 +790,7 @@ class Engine():
         if self._shut_down:
             raise RuntimeError('This engine has already been shut down')
 
+        self._final_stats = self.get_stats()
         self._shut_down = True
         self._stop_signal.put('STOP')
         self._stop_signal.put('STOP')
@@ -727,6 +846,7 @@ class Engine():
 
         if self._shut_down:
             raise RuntimeError('This engine has been shut down')
+        self._validate_queries += 1
 
         try:
             true_solution = self._fernet.decrypt(encrypted_blob, ttl = self._settings._LIFETIME).decode()
@@ -735,12 +855,21 @@ class Engine():
                 proposed_solution = proposed_solution.lower()
                 true_solution = true_solution.lower()
             if proposed_solution == true_solution:
-                return self._blob_validation_result.get()
+                if self._blob_validation_result.get():
+                    self._captcha_solves += 1
+                    return True
+                else:
+                    return False
             else:
                 self._blob_validation_result.get()
                 return False
         except:
             return False
+
+    def __repr__(self):
+        """Returns a string that represents this Engine instance"""
+
+        return self.print_stats(True)
 
 
 class Settings():
