@@ -135,7 +135,16 @@ To get a CAPTCHA's solution, you can call the `get_solution` method on your `Cap
 solution = my_captcha.get_solution()
 ```
 
-Keep in mind that although the returned solution will always match the capitalization of the text appearing in the CAPTCHA image, you may not wish to enforce case sensitivity (and the BotBlock Engine will not enforce it by default) when verifying solutions.
+Keep in mind that although the returned solution will always match the capitalization of the text appearing in the CAPTCHA image, you may not wish to enforce case sensitivity (and the BotBlock Engine will not enforce it by default) when verifying users' solutions.
+
+If you would like to see statistical information about a `Captcha` instance, you can call its `print_stats` method, or use `get_stats` to return the same information as a dictionary:
+
+```python
+stats = my_captcha.get_stats()
+# To print the Captcha instance's stats, you can use either of the following:
+my_captcha.print_stats()
+print(my_captcha)
+```
 
 Finally, the `generate` method can be called on your `Captcha` instance to regenerate its CAPTCHA image and metadata:
 
@@ -224,6 +233,60 @@ An `Engine` instance's `validate` method will always return `False`, unless:
 - The authentication data isn't older than the CAPTCHA's lifetime (the CAPTCHA isn't expired)
 - The proposed solution matches the correct solution
 - Validation hasn't already been attempted (successfully or unsuccessfully) with this encrypted blob
+
+Finally, to get statistical information about an `Engine` instance, you can call its `get_stats` method, to have the data returned as a dictionary. Alternatively, you can call `print_stats`, to have the information printed to your terminal. It's important to note that for the few seconds (though usually less) that it takes an `Engine` instance to compile the statistics, you may notice degraded query response speeds. Here's example output from calling `print_stats` on a production `Engine` instance:
+
+```
+>>> engine.print_stats()
+BOTBLOCK ENGINE INSTANCE
+
+    Shut Down: No
+    Active: 0 days, 16 hours, 21 minutes, and 30 seconds
+
+    Pool Size: 500
+    Fresh CAPTCHAs in Pool: 493
+    Used CAPTCHAs in Pool: 7
+
+    CAPTCHAs Distributed: 19630
+    Validation Attempts: 12442
+    CAPTCHA Solves: 10596
+
+    CAPTCHAs Generated per Hour: 1200.0
+    Validation Attempts per Hour: 760.59
+    CAPTCHA Solves per Hour: 647.74
+
+    Average Stats per Captcha Instance (500 Analyzed):
+        Average number of CAPTCHAs generated per Captcha Instance: 39.26
+        Average Font Size per Character per CAPTCHA: 122.35
+        Average Number of Character Colors Evaluated per CAPTCHA: 28.31
+        Average Number of Corrections to Character Positions per CAPTCHA: 1.54
+        Average Image Data Size (In Bytes) per CAPTCHA: 30784.54
+        Average Number of Layers of Noise Applied to Each CAPTCHA: 18.86
+
+    Settings:
+        WIDTH                                 = 750
+        HEIGHT                                = 250
+        FORMAT                                = 'PNG'
+        TEXT                                  = ''
+        TEXT_LENGTH                           = 6
+        CHARACTER_SET                         = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'
+        FONTS                                 = [
+                                                    'Amatic-Bold.ttf',
+                                                    'LifeSavers-Bold.ttf',
+                                                    'TungusFont_Tinet.ttf',
+                                                ]
+        CHARACTER_HORIZONTAL_SHIFT_PERCENTAGE = 65
+        CHARACTER_VERTICAL_SHIFT_PERCENTAGE   = 65
+        FONT_SIZE_SHIFT_PERCENTAGE            = 25
+        CHARACTER_OVERLAP_ENABLED             = False
+        MAXIMUM_NOISE                         = 25
+        MINIMUM_COLOR_BRIGHTNESS_DIFFERENCE   = 65
+        MINIMUM_COLOR_HUE_DIFFERENCE          = 250
+        CASE_SENSITIVE                        = False
+        LIFETIME                              = 600
+        POOL_SIZE                             = 500
+        RATE_LIMIT                            = 0
+```
 
 ### Customizing CAPTCHA Settings
 
@@ -489,44 +552,6 @@ Using the default character set with case sensitivity disabled (also the default
 
 The font size used when generating a CAPTCHA is automatically calculated based on the text length and the image size. The greater the text length set here, the smaller the font size will be.
 
-#### CASE_SENSITIVE
-
-**Applies To:** Engines
-
-**Default Value:** `False`
-
-**Must Be:**
-
-- Of type `bool`
-
-**Efficiency Impact:**
-
-Negligible
-
-**Description:**
-
-When `True`, provided solutions must match the case (uppercase or lowercase) of the CAPTCHA text in order for the Engine's `validate` method to conclude that the solution is valid. For example:
-
-| CAPTCHA Text | User's Solution | Considered Valid |
-|--------------|-----------------|------------------|
-|    NfBnhB    |      NfBnhB     |       True       |
-|    CSKteH    |      cskteh     |       False      |
-|    FSv52h    |      FSV52H     |       False      |
-|    Tav3dH    |      TaV3dH     |       False      |
-
-When `False`, the Engine's `validate` method will determine that a solution is valid as long as the correct characters are provided in the correct order, regardless of their capitalization. For example:
-
-| CAPTCHA Text | User's Solution | Considered Valid |
-|--------------|-----------------|------------------|
-|    NfBnhB    |      NfBnhB     |       True       |
-|    CSKteH    |      cskteh     |       True       |
-|    FSv52h    |      FSV52H     |       True       |
-|    Tav3dH    |      TaV3dH     |       True       |
-
-It is highly recommended to use the default value of `False` for this setting, even if it makes the CAPTCHA easier to bruteforce. Enabling case sensitivity can be very frustrating for users who may not be expecting case sensitivity, or who may have trouble distinguishing the random case of each character (especially when a variety of fonts and/or shifts are used).
-
-It should also be noted that when this setting is set to `False`, Python's `str.lower` method is applied to the CAPTCHA text and the proposed solution during validation, which may not work properly on all possible character sets. In those situations, you may need to change this setting to `True`.
-
 #### CHARACTER_SET
 
 **Applies To:** CAPTCHAs
@@ -730,6 +755,44 @@ The default value of this setting (combined with the default value of the `MINIM
 
 While this setting's default value may be good for testing, **it should be changed when using BotBlock in production**. W3 recommends setting this value to at least `500`, to ensure compliance with web accessibility standards.
 
+#### CASE_SENSITIVE
+
+**Applies To:** Engines
+
+**Default Value:** `False`
+
+**Must Be:**
+
+- Of type `bool`
+
+**Efficiency Impact:**
+
+Negligible
+
+**Description:**
+
+When `True`, provided solutions must match the case (uppercase or lowercase) of the CAPTCHA text in order for the Engine's `validate` method to conclude that the solution is valid. For example:
+
+| CAPTCHA Text | User's Solution | Considered Valid |
+|--------------|-----------------|------------------|
+|    NfBnhB    |      NfBnhB     |       True       |
+|    CSKteH    |      cskteh     |       False      |
+|    FSv52h    |      FSV52H     |       False      |
+|    Tav3dH    |      TaV3dH     |       False      |
+
+When `False`, the Engine's `validate` method will determine that a solution is valid as long as the correct characters are provided in the correct order, regardless of their capitalization. For example:
+
+| CAPTCHA Text | User's Solution | Considered Valid |
+|--------------|-----------------|------------------|
+|    NfBnhB    |      NfBnhB     |       True       |
+|    CSKteH    |      cskteh     |       True       |
+|    FSv52h    |      FSV52H     |       True       |
+|    Tav3dH    |      TaV3dH     |       True       |
+
+It is highly recommended to use the default value of `False` for this setting, even if it makes the CAPTCHA easier to bruteforce. Enabling case sensitivity can be very frustrating for users who may not be expecting case sensitivity, or who may have trouble distinguishing the random case of each character (especially when a variety of fonts and/or shifts are used).
+
+It should also be noted that when this setting is set to `False`, Python's `str.lower` method is applied to the CAPTCHA text and the proposed solution during validation, which may not work properly on all possible character sets. In those situations, you may need to change this setting to `True`.
+
 #### LIFETIME
 
 **Applies To:** Engines
@@ -773,6 +836,31 @@ Sets an Engine's fresh `Captcha` instance pool size
 In order to increase efficiency and query response speeds, and allow for burstable performance, Engine objects create and maintain a pool of fresh `Captcha` instances, with CAPTCHA images and data ready to be distributed at any moment. This size of this pool can be tuned to fit your website/project's requirements. For example, if your website often experiences large bursts in traffic, you may wish to increase the `POOL_SIZE` setting's value. On the other hand, if running on a system with very limited memory, you may wish to decrease this setting's value.
 
 Note: this is the only setting that cannot be dynamically updated.
+
+#### RATE_LIMIT
+
+**Applies To:** Engines
+
+**Default Value:** `0`
+
+**Must Be:**
+
+- Of type `int`
+- A whole number
+
+**Efficiency Impact:**
+
+No impact on CAPTCHA generation efficiency
+
+The lesser the value (still greater than `0`), the lower the average CPU usage by BotBlock
+
+**Description:**
+
+Sets a limit on the number of CAPTCHAs that may be generated per minute
+
+For systems with strict limits on average CPU usage, this setting allows the developer to limit the number of CAPTCHAs that BotBlock will generate per minute. If the limit is reached within one minute, BotBlock will pause CAPTCHA regeneration until the next minute starts. Rate limiting can be disabled by making this setting's value equal to `0`.
+
+Note: the rate limiting does not apply to the initial CAPTCHA generation (to fill the pool) that occurs when an `Engine` is first instantiated. It will also not apply to the regeneration that occurs when an `Engine` instance's settings are updated.
 
 ## Example CAPTCHAs
 
