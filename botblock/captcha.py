@@ -500,7 +500,7 @@ class Engine():
             self._fresh_captchas.put(Captcha(settings = self._settings))
 
         while self._stop_signal.qsize() == 0:
-            sleep(0.5)
+            sleep(1)
             captcha_instances = []
             if self._modified_settings.qsize() != 0:
                 new_settings = self._modified_settings.get()
@@ -551,13 +551,28 @@ class Engine():
     def _refresh_captchas(self):
         """Refreshes used Captcha instances, and makes them available for reuse"""
 
+        before_generation_loop = 0
         while self._stop_signal.qsize() == 0:
-            try:
-                captcha_to_refresh = self._used_captchas.get(timeout = 1)
-            except Empty:
-                continue
-            captcha_to_refresh.generate()
-            self._fresh_captchas.put(captcha_to_refresh)
+            generation_loop_range = self._settings._POOL_SIZE
+            if self._settings._RATE_LIMIT:
+                before_generation_loop = time()
+                generation_loop_range = self._settings._RATE_LIMIT
+            for _ in range(generation_loop_range):
+                if self._stop_signal.qsize() != 0:
+                    break
+                try:
+                    captcha_to_refresh = self._used_captchas.get(timeout = 1)
+                except Empty:
+                    continue
+                captcha_to_refresh.generate()
+                self._fresh_captchas.put(captcha_to_refresh)
+            if self._settings._RATE_LIMIT:
+                time_to_sleep = 60 - int(time() - before_generation_loop)
+                if time_to_sleep > 0:
+                    for _ in range(time_to_sleep):
+                        if self._stop_signal.qsize() != 0:
+                            break
+                        sleep(1)
 
         # Close all queues before terminating:
         self._fresh_captchas.close()
@@ -717,7 +732,10 @@ class Engine():
             )
             captcha_instances = []
             for _ in range(available_captcha_instances):
-                captcha_instances.append(self._fresh_captchas.get())
+                try:
+                    captcha_instances.append(self._fresh_captchas.get(timeout = 5))
+                except Empty:
+                    break
             for captcha in captcha_instances:
                 captcha_stats = captcha.get_stats()
                 total_font_sizes += captcha_stats['Average Font Size']
@@ -728,6 +746,7 @@ class Engine():
                 total_noise_layers += captcha_stats['Layers of Noise']
                 self._fresh_captchas.put(captcha)
             stats['Captcha Instance Averages'] = {
+                'Instances Analyzed': len(captcha_instances),
                 'Average Font Size': round(total_font_sizes / available_captcha_instances, 2),
                 'Character Colors Evaluated': round(total_colors_evaluated / available_captcha_instances, 2),
                 'Character Position Corrections': round(total_position_corrections / available_captcha_instances, 2),
@@ -768,7 +787,8 @@ class Engine():
         stats_output += f"\n    CAPTCHAs Generated per Hour: {stats['Generations/Hour']}\n"
         stats_output += f"    Validation Attempts per Hour: {stats['Validations/Hour']}\n"
         stats_output += f"    CAPTCHA Solves per Hour: {stats['Solves/Hour']}\n"
-        stats_output += "\n    Average Stats per Captcha Instance in Pool:\n"
+        stats_output += "\n    Average Stats per Captcha Instance "
+        stats_output += f"({stats['Captcha Instance Averages']['Instances Analyzed']} Analyzed):\n"
         stats_output += '        Average number of CAPTCHAs generated per Captcha Instance: '
         stats_output += f"{stats['Captcha Instance Averages']['Generation']}\n"
         stats_output += '        Average Font Size per Character per CAPTCHA: '
@@ -854,20 +874,20 @@ class Engine():
 
         try:
             true_solution = self._fernet.decrypt(encrypted_blob, ttl = self._settings._LIFETIME).decode()
-            self._blob_to_validate.put(encrypted_blob)
-            if not self._settings._CASE_SENSITIVE:
-                proposed_solution = proposed_solution.lower()
-                true_solution = true_solution.lower()
-            if proposed_solution == true_solution:
-                if self._blob_validation_result.get():
-                    self._captcha_solves += 1
-                    return True
-                else:
-                    return False
+        except InvalidToken:
+            return False
+        self._blob_to_validate.put(encrypted_blob)
+        if not self._settings._CASE_SENSITIVE:
+            proposed_solution = proposed_solution.lower()
+            true_solution = true_solution.lower()
+        if proposed_solution == true_solution:
+            if self._blob_validation_result.get():
+                self._captcha_solves += 1
+                return True
             else:
-                self._blob_validation_result.get()
                 return False
-        except:
+        else:
+            self._blob_validation_result.get()
             return False
 
     def __repr__(self):
@@ -937,7 +957,7 @@ class Settings():
                 max_setting_name_length = len(setting)
         for setting in settings:
             if exclude_engine_settings:
-                if setting in ['CASE_SENSITIVE', 'LIFETIME', 'POOL_SIZE']:
+                if setting in ['CASE_SENSITIVE', 'LIFETIME', 'POOL_SIZE', 'RATE_LIMIT']:
                     continue
             trailing_spaces = ' ' * (max_setting_name_length - len(setting) + 1)
             # Visually indicate that this value is a string (especially helpful for empty strings):
@@ -1087,7 +1107,6 @@ class Settings():
             'FORMAT': self._FORMAT,
             'TEXT': self._TEXT,
             'TEXT_LENGTH': self._TEXT_LENGTH,
-            'CASE_SENSITIVE': self._CASE_SENSITIVE,
             'CHARACTER_SET': self._CHARACTER_SET,
             'FONTS': self._FONTS,
             'CHARACTER_HORIZONTAL_SHIFT_PERCENTAGE': self._CHARACTER_HORIZONTAL_SHIFT_PERCENTAGE,
@@ -1097,8 +1116,10 @@ class Settings():
             'MAXIMUM_NOISE': self._MAXIMUM_NOISE,
             'MINIMUM_COLOR_BRIGHTNESS_DIFFERENCE': self._MINIMUM_COLOR_BRIGHTNESS_DIFFERENCE,
             'MINIMUM_COLOR_HUE_DIFFERENCE': self._MINIMUM_COLOR_HUE_DIFFERENCE,
+            'CASE_SENSITIVE': self._CASE_SENSITIVE,
             'LIFETIME': self._LIFETIME,
             'POOL_SIZE': self._POOL_SIZE,
+            'RATE_LIMIT': self._RATE_LIMIT,
         }
 
     def get_supported_image_formats(self):
@@ -1129,8 +1150,6 @@ class Settings():
                 self._TEXT = kwargs[setting]
             elif setting == 'TEXT_LENGTH':
                 self._TEXT_LENGTH = kwargs[setting]
-            elif setting == 'CASE_SENSITIVE':
-                self._CASE_SENSITIVE = kwargs[setting]
             elif setting == 'CHARACTER_SET':
                 self._CHARACTER_SET = kwargs[setting]
             elif setting == 'FONTS':
@@ -1149,10 +1168,14 @@ class Settings():
                 self._MINIMUM_COLOR_BRIGHTNESS_DIFFERENCE = kwargs[setting]
             elif setting == 'MINIMUM_COLOR_HUE_DIFFERENCE':
                 self._MINIMUM_COLOR_HUE_DIFFERENCE = kwargs[setting]
+            elif setting == 'CASE_SENSITIVE':
+                self._CASE_SENSITIVE = kwargs[setting]
             elif setting == 'LIFETIME':
                 self._LIFETIME = kwargs[setting]
             elif setting == 'POOL_SIZE':
                 self._POOL_SIZE = kwargs[setting]
+            elif setting == 'RATE_LIMIT':
+                self._RATE_LIMIT = kwargs[setting]
             else:
                 raise NameError(f'The setting "{setting}" does not exist')
 
@@ -1166,7 +1189,6 @@ class Settings():
         self._FORMAT = 'PNG'
         self._TEXT = '' # Randomly generated if blank
         self._TEXT_LENGTH = 6
-        self._CASE_SENSITIVE = False
         self._CHARACTER_SET = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789' # Commonly-confused characters discluded
         self._FONTS = [ # The MIT license used for this repository does not apply to these open source fonts
             files('botblock.fonts').joinpath('Amatic-Bold.ttf').as_posix(),
@@ -1180,8 +1202,10 @@ class Settings():
         self._MAXIMUM_NOISE = 25 # In maximum layers of noise
         self._MINIMUM_COLOR_BRIGHTNESS_DIFFERENCE = 65 # Per W3 should be 125 in production
         self._MINIMUM_COLOR_HUE_DIFFERENCE = 250 # Per W3 should be 500 in production
+        self._CASE_SENSITIVE = False
         self._LIFETIME = 600 # In seconds
         self._POOL_SIZE = 500 # In Captcha instances
+        self._RATE_LIMIT = 0 # In CAPTCHAs generated per minute
 
         self.validate_settings()
 
@@ -1222,8 +1246,6 @@ class Settings():
             raise TypeError('The TEXT_LENGTH setting is not an int')
         if self._TEXT_LENGTH < 3:
             raise ValueError('The TEXT_LENGTH setting cannot be less than 3')
-        if type(self._CASE_SENSITIVE) is not bool:
-            raise TypeError('The CASE_SENSITIVE setting is not a bool')
         if type(self._CHARACTER_SET) is not str:
             raise TypeError('The CHARACTER_SET setting is not a str')
         if not self._CHARACTER_SET and not self._TEXT:
@@ -1269,6 +1291,8 @@ class Settings():
             raise TypeError('The MINIMUM_COLOR_HUE_DIFFERENCE setting is not an int')
         if self._MINIMUM_COLOR_HUE_DIFFERENCE > 600:
             raise ValueError('The MINIMUM_COLOR_HUE_DIFFERENCE setting must be an integer less than or equal to 600')
+        if type(self._CASE_SENSITIVE) is not bool:
+            raise TypeError('The CASE_SENSITIVE setting is not a bool')
         if type(self._LIFETIME) is not int:
             raise TypeError('The LIFETIME setting is not an int')
         if self._LIFETIME < 0:
@@ -1277,6 +1301,10 @@ class Settings():
             raise TypeError('The POOL_SIZE setting is not an int')
         if self._POOL_SIZE < 1:
             raise ValueError('The POOL_SIZE setting must be an integer greater than 0')
+        if type(self._RATE_LIMIT) is not int:
+            raise TypeError('The RATE_LIMIT setting is not an int')
+        if self._RATE_LIMIT < 0:
+            raise ValueError('The RATE_LIMIT setting cannot be less than 0')
 
         self._calculate_font_sizes()
 
