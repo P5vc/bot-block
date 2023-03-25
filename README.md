@@ -848,17 +848,30 @@ Note: this is the only setting that cannot be dynamically updated.
 - Of type `int`
 - A whole number
 
+***OR***
+
+- Of type `float`
+- Greater in value than `0.0`
+
 **Efficiency Impact:**
 
-No impact on CAPTCHA generation efficiency
+No impact on CAPTCHA generation efficiency when disabled (default), very slight impact when enabled
 
-The lesser the value (still greater than `0`), the lower the average CPU usage by BotBlock
+The lesser the integer value (still greater than `0`), the lower the average CPU usage by BotBlock
+
+The greater the floating point value, the lower the average CPU usage by BotBlock
 
 **Description:**
 
-Sets a limit on the number of CAPTCHAs that may be generated per minute
+Limits the number of CAPTCHAs that may be generated per minute
 
-For systems with strict limits on average CPU usage, this setting allows the developer to limit the number of CAPTCHAs that BotBlock will generate per minute. If the limit is reached within one minute, BotBlock will pause CAPTCHA regeneration until the next minute starts. Rate limiting can be disabled by making this setting's value equal to `0`.
+For systems with strict limits on average CPU usage, this setting allows the developer to limit the number of CAPTCHAs that BotBlock will generate per minute, via one of two ways:
+
+When an integer value is supplied (e.g. `250`), BotBlock will only allow that number of CAPTCHAs to be generate per minute. If the limit is reached within one minute, BotBlock will pause CAPTCHA generation until the next minute starts.
+
+When a floating point value is supplied (e.g. `0.1`), BotBlock will sleep for that number of seconds after each CAPTCHA that it generates, before beginning to generate the next CAPTCHA.
+
+All rate limiting can be disabled by making this setting's value equal to `0`.
 
 Note: the rate limiting does not apply to the initial CAPTCHA generation (to fill the pool) that occurs when an `Engine` is first instantiated. It will also not apply to the regeneration that occurs when an `Engine` instance's settings are updated.
 

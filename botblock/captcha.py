@@ -555,8 +555,17 @@ class Engine():
         while self._stop_signal.qsize() == 0:
             generation_loop_range = self._settings._POOL_SIZE
             if self._settings._RATE_LIMIT:
-                before_generation_loop = time()
-                generation_loop_range = self._settings._RATE_LIMIT
+                if type(self._settings._RATE_LIMIT) == int:
+                    before_generation_loop = time()
+                    generation_loop_range = self._settings._RATE_LIMIT
+                else:
+                    generation_loop_range = 1
+                    rate_limit_as_int = int(self._settings._RATE_LIMIT)
+                    for _ in range(rate_limit_as_int):
+                        if self._stop_signal.qsize() != 0:
+                            break
+                        sleep(1)
+                    sleep(self._settings._RATE_LIMIT - rate_limit_as_int)
             for _ in range(generation_loop_range):
                 if self._stop_signal.qsize() != 0:
                     break
@@ -566,7 +575,7 @@ class Engine():
                     continue
                 captcha_to_refresh.generate()
                 self._fresh_captchas.put(captcha_to_refresh)
-            if self._settings._RATE_LIMIT:
+            if self._settings._RATE_LIMIT and type(self._settings._RATE_LIMIT) == int:
                 time_to_sleep = 60 - int(time() - before_generation_loop)
                 if time_to_sleep > 0:
                     for _ in range(time_to_sleep):
@@ -703,8 +712,6 @@ class Engine():
             stats['Active Minutes'] = tmp_active_time // 60
             tmp_active_time -= stats['Active Minutes'] * 60
             stats['Active Seconds'] = tmp_active_time
-            stats['Fresh CAPTCHAs'] = self._fresh_captchas.qsize()
-            stats['Used CAPTCHAs'] = self._used_captchas.qsize()
             stats['CAPTCHAs Distributed'] = self._get_queries
             stats['Validation Attempts'] = self._validate_queries
             stats['CAPTCHA Solves'] = self._captcha_solves
@@ -727,15 +734,22 @@ class Engine():
             total_data_sizes = 0
             total_noise_layers = 0
             available_captcha_instances = min(
-                stats['Fresh CAPTCHAs'] + stats['Used CAPTCHAs'],
+                self._fresh_captchas.qsize() + self._used_captchas.qsize(),
                 self._settings._POOL_SIZE
             )
+            # When getting Captchas, try to take no longer than about 5 seconds,
+            # to prevent long hangs when rate limiting is used with large pool sizes:
+            before_loop_time = time()
             captcha_instances = []
             for _ in range(available_captcha_instances):
                 try:
                     captcha_instances.append(self._fresh_captchas.get(timeout = 5))
+                    if time() - before_loop_time >= 5:
+                        break
                 except Empty:
                     break
+            stats['Fresh CAPTCHAs'] = len(captcha_instances)
+            stats['Used CAPTCHAs'] = self._used_captchas.qsize()
             for captcha in captcha_instances:
                 captcha_stats = captcha.get_stats()
                 total_font_sizes += captcha_stats['Average Font Size']
@@ -747,12 +761,12 @@ class Engine():
                 self._fresh_captchas.put(captcha)
             stats['Captcha Instance Averages'] = {
                 'Instances Analyzed': len(captcha_instances),
-                'Average Font Size': round(total_font_sizes / available_captcha_instances, 2),
-                'Character Colors Evaluated': round(total_colors_evaluated / available_captcha_instances, 2),
-                'Character Position Corrections': round(total_position_corrections / available_captcha_instances, 2),
-                'Generation': round(total_generations / available_captcha_instances, 2),
-                'Image Data Size': round(total_data_sizes / available_captcha_instances, 2),
-                'Layers of Noise': round(total_noise_layers / available_captcha_instances, 2),
+                'Average Font Size': round(total_font_sizes / len(captcha_instances), 2),
+                'Character Colors Evaluated': round(total_colors_evaluated / len(captcha_instances), 2),
+                'Character Position Corrections': round(total_position_corrections / len(captcha_instances), 2),
+                'Generation': round(total_generations / len(captcha_instances), 2),
+                'Image Data Size': round(total_data_sizes / len(captcha_instances), 2),
+                'Layers of Noise': round(total_noise_layers / len(captcha_instances), 2),
             }
             stats['Settings'] = self._settings.get_settings()
             return stats
@@ -1205,7 +1219,7 @@ class Settings():
         self._CASE_SENSITIVE = False
         self._LIFETIME = 600 # In seconds
         self._POOL_SIZE = 500 # In Captcha instances
-        self._RATE_LIMIT = 0 # In CAPTCHAs generated per minute
+        self._RATE_LIMIT = 0 # Disabled
 
         self.validate_settings()
 
@@ -1301,10 +1315,12 @@ class Settings():
             raise TypeError('The POOL_SIZE setting is not an int')
         if self._POOL_SIZE < 1:
             raise ValueError('The POOL_SIZE setting must be an integer greater than 0')
-        if type(self._RATE_LIMIT) is not int:
-            raise TypeError('The RATE_LIMIT setting is not an int')
+        if type(self._RATE_LIMIT) is not int and type(self._RATE_LIMIT) is not float:
+            raise TypeError('The RATE_LIMIT setting is not an int or float')
         if self._RATE_LIMIT < 0:
             raise ValueError('The RATE_LIMIT setting cannot be less than 0')
+        if type(self._RATE_LIMIT) == float and self._RATE_LIMIT == 0.0:
+            self._RATE_LIMIT = 0
 
         self._calculate_font_sizes()
 
