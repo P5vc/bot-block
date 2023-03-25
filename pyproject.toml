@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "botblock"
-version = "2.0.0"
+version = "2.1.0"
 authors = [
     {name = "Priveasy", email = "Admin@Priveasy.org"},
 ]
@@ -17,6 +17,10 @@ keywords = [
     "Bot",
     "Block",
     "CAPTCHA",
+    "Spam",
+    "Protect",
+    "Form",
+    "Website",
     "Self-Hosted",
     "Self",
     "Hosted",

@@ -1,10 +1,10 @@
 # BotBlock
 
-##### A modern, self-hosted, privacy-respecting, CAPTCHA solution
+***A modern, self-hosted, privacy-respecting, CAPTCHA solution***
 
 ------------
 
-## Table of Contents
+# Table of Contents
 
 - [Overview](#overview "Overview")
 - [Implementation Details](#implementation-details "Implementation Details")
@@ -16,7 +16,7 @@
   - [Available Settings](#available-settings "Available Settings")
 - [Example CAPTCHAs](#example-captchas "Example CAPTCHAs")
 
-## Overview
+# Overview
 
 BotBlock is a CAPTCHA solution designed to help developers protect their websites and applications from bots, without having to compromise on the privacy of their users.
 
@@ -24,7 +24,7 @@ Unlike most other CAPTCHA solutions, BotBlock is open source, completely self-ho
 
 If you are looking for a simple—yet robust—CAPTCHA solution that is customizable, easy to implement, privacy-respecting, and fully self-contained, BotBlock is the way to go!
 
-## Implementation Details
+# Implementation Details
 
 BotBlock is written in Python3 and designed to be fully compatible with modern web application frameworks, such as Django. It is perfect for small to large (and maybe even some corporate-sized) websites and projects looking to mitigate spam on their servers.
 
@@ -37,11 +37,11 @@ When using BotBlock for your project, it's important to keep accessibility in mi
 Please remember that BotBlock is a free, open source, community project. It makes no guarantees and provides no professional support. If you find it useful for mitigating spam and providing an additional layer of defense for your project, great! You are more than welcome to use it! But know that in these modern times with rapidly-improving AI and OCR technology, it is not completely implausible that BotBlock is, or eventually will be, defeatable. In addition, please keep in mind that BotBlock is self-hosted, and therefore will not be able to defend against traditional Denial of Service attacks. In fact, BotBlock could actually make those types of attacks more effective, due to the additional processing power required to generate CAPTCHAs. For the best results, it is recommended to only use BotBlock in line with the use cases outlined above.
 
 
-## Usage
+# Usage
 
 The full guide for developers on how to install, configure, and integrate BotBlock into their projects.
 
-### Installation
+## Installation
 
 The easiest way to install BotBlock is to use `pip`:
 
@@ -73,7 +73,7 @@ importlib-resources>=5.12
 Pillow>=9.4
 ```
 
-### Generating a Simple CAPTCHA
+## Generating a Simple CAPTCHA
 
 To generate a simple CAPTCHA using BotBlock, you must first import the `Captcha` class:
 
@@ -160,7 +160,7 @@ BotBlock's CAPTCHA Engine provides all of the backend code needed to generate an
 
 Although the `Engine` object's lack of certain features provided by `Captcha` objects may feel cumbersome at first, this is an intentional decision designed to increase security and efficiency, and reduce critical implementation errors. For example, when using the CAPTCHA Engine, you will not be able to programmatically view the correct solutions to generated CAPTCHAs. This ensures that the Engine's validation function must always be called, where strong encryption, replay attack protection, and CAPTCHA expiration is always used.
 
-When you instantiate an `Engine` object, three subprocesses are automatically created. The first subprocess instantiates a pool of `Captcha` instances, creating a buffer capable of withstanding bursts in CAPTCHA requests. In the event that CAPTCHA settings are changed, this subprocess is the one responsible for reinstantiating all of the `Captcha` instances with the new settings. The second subprocess handles the automatic regeneration of used `Captcha` instances, ensuring that the pool of fresh CAPTCHAs is always full. The third subprocess handles CAPTCHA validation, automatically checking CAPTCHAs submitted for validation to ensure that they haven't already been validated (preventing replay attacks). This subprocess also maintains the storage of validated CAPTCHAs, and automatically removes their data after they have expired.
+When you instantiate an `Engine` object, three subprocesses are automatically created. The first subprocess instantiates a pool of `Captcha` instances, creating a buffer capable of withstanding bursts in CAPTCHA requests. In the event that CAPTCHA settings are changed, this subprocess is the one responsible for updating all of the `Captcha` instances with the new settings. The second subprocess handles the automatic regeneration of used `Captcha` instances, ensuring that the pool of fresh CAPTCHAs is always full. The third subprocess handles CAPTCHA validation, automatically checking CAPTCHAs submitted for validation to ensure that they haven't already been validated (preventing replay attacks). This subprocess also maintains the storage of validated CAPTCHAs, and automatically removes their data after they have expired.
 
 To use BotBlock's CAPTCHA Engine, you must first import the `Engine` class, like so:
 
@@ -183,6 +183,13 @@ engine.shut_down()
 ```
 
 The `shut_down` method will block until the `Engine` instance has finished shutting down. This shouldn't take more than a few seconds at most.
+
+Alternatively, you can use a `with` statement with an `Engine` instance to automatically shut it down after the statement body finishes executing:
+
+```python
+with Engine() as engine:
+    captcha = engine.get_captcha()
+```
 
 To check if an `Engine` instance has been shut down, you can call its `is_shut_down` method:
 
@@ -288,7 +295,7 @@ BOTBLOCK ENGINE INSTANCE
         RATE_LIMIT                            = 0
 ```
 
-### Customizing CAPTCHA Settings
+## Customizing CAPTCHA Settings
 
 Now that you can successfully generate and validate CAPTCHAs, it's time to learn how to customize them!
 
@@ -396,11 +403,11 @@ When running a benchmark, please keep in mind that:
 - The raw numbers shown (such as the number of CAPTCHAs generated and the amount of time they were generated in) are not indicative of the performance you can expect when using an Engine, as the benchmark only utilizes `Captcha` objects for increased simplicity and accuracy (and for that reason, customized Engine-specific settings will not impact the benchmark). That being said, though the raw numbers may not apply, the relative efficiency percentages between `Settings` instances should still be accurate for `Engine` objects.
 - If you have a low-to-medium traffic website, the efficiency of your settings may not matter all that much, as you won't need to generate tens of thousands of CAPTCHAs per minute anyways. Therefore, don't get too hung up on the efficiency of your CAPTCHA Engine, and instead focus more on choosing the best, and most-accessible settings for your site.
 
-### Available Settings
+## Available Settings
 
 This section serves as a reference for each available setting that a developer may customize.
 
-#### WIDTH
+### WIDTH
 
 **Applies To:** CAPTCHAs
 
@@ -420,7 +427,7 @@ In general, the greater the value, the lesser the efficiency
 
 Sets the width of the CAPTCHA image to generate, in pixels
 
-#### HEIGHT
+### HEIGHT
 
 **Applies To:** CAPTCHAs
 
@@ -440,7 +447,7 @@ In general, the greater the value, the lesser the efficiency
 
 Sets the height of the CAPTCHA image to generate, in pixels
 
-#### FORMAT
+### FORMAT
 
 **Applies To:** CAPTCHAs
 
@@ -493,7 +500,7 @@ The PNG and JPEG image formats are highly recommended due to their widespread su
 
 The PNG format was chosen as the default, due to it being a lossless image format. This ensures that the CAPTCHA details, including all of the noise, are clearly visible in the image. That being said, if you're using a large-enough image size for the text to still be clear, and don't mind compression artifacts on the image, then switching this setting from `'PNG'` to `'JPEG'` could just about double the CAPTCHA generation efficiency, while maintaining about the same file sizes.
 
-#### TEXT
+### TEXT
 
 **Applies To:** CAPTCHAs
 
@@ -514,7 +521,7 @@ Sets custom CAPTCHA text to use
 
 When blank, CAPTCHA text will be randomly generated using characters from the `CHARACTER_SET` setting. Otherwise, CAPTCHA text (and therefore the solution) will always be equal to this value (negating the `CHARACTER_SET` and `TEXT_LENGTH` settings).
 
-#### TEXT_LENGTH
+### TEXT_LENGTH
 
 **Applies To:** CAPTCHAs
 
@@ -552,7 +559,7 @@ Using the default character set with case sensitivity disabled (also the default
 
 The font size used when generating a CAPTCHA is automatically calculated based on the text length and the image size. The greater the text length set here, the smaller the font size will be.
 
-#### CHARACTER_SET
+### CHARACTER_SET
 
 **Applies To:** CAPTCHAs
 
@@ -581,7 +588,7 @@ When designing a custom character set, you should keep the following in mind:
 - The character set should not contain any characters that look identical or very similar when rendered in any of the CAPTCHA's fonts (for example, `I`, `l`, and `1`)
 - The character set should not contain any characters that Python doesn't know how to properly iterate over
 
-#### FONTS
+### FONTS
 
 **Applies To:** CAPTCHAs
 
@@ -603,7 +610,7 @@ If changing this setting, make sure to test each font with your character set, t
 
 *Note: the default fonts, while all open source, do not fall under this repository's MIT license. Navigate to the `fonts` directory in this repository to view each font's license.*
 
-#### CHARACTER_HORIZONTAL_SHIFT_PERCENTAGE
+### CHARACTER_HORIZONTAL_SHIFT_PERCENTAGE
 
 **Applies To:** CAPTCHAs
 
@@ -624,7 +631,7 @@ Sets the maximum percentage to horizontally shift characters
 
 During CAPTCHA generation, characters' locations are shifted horizontally by a random percentage of their containing box's width. The maximum percentage that a character may be shifted left or right is determined by this setting.
 
-#### CHARACTER_VERTICAL_SHIFT_PERCENTAGE
+### CHARACTER_VERTICAL_SHIFT_PERCENTAGE
 
 **Applies To:** CAPTCHAs
 
@@ -645,7 +652,7 @@ Sets the maximum percentage to vertically shift characters
 
 During CAPTCHA generation, characters' locations are shifted vertically by a random percentage of the containing box's height. The maximum percentage that a character may be shifted up or down is determined by this setting.
 
-#### FONT_SIZE_SHIFT_PERCENTAGE
+### FONT_SIZE_SHIFT_PERCENTAGE
 
 **Applies To:** CAPTCHAs
 
@@ -666,7 +673,7 @@ Sets the maximum percentage to shift characters' font sizes
 
 During CAPTCHA generation, characters' font sizes are shifted by a random percentage of their (automatically calculated) default size. The maximum percentage that a character's font size may be increased or decreased is determined by this setting.
 
-#### CHARACTER_OVERLAP_ENABLED
+### CHARACTER_OVERLAP_ENABLED
 
 **Applies To:** CAPTCHAs
 
@@ -684,7 +691,7 @@ In general, when set to `True`, CAPTCHA generation is more efficient
 
 When `False`, the randomly-shifted character positions in the CAPTCHA are checked and modified as necessary, to ensure that two characters never overlap, characters don't get positioned outside of the image border, and characters are always presented in the correct order. When `True`, this check is skipped, and character positions are only roughly enforced. This can lead to some CAPTCHAs containing overlapping characters, characters that are cut off (partially or completely) by the edge of the image, and/or characters that are slightly out of order. This is only a significant risk when one or both of the `CHARACTER_HORIZONTAL_SHIFT_PERCENTAGE` and `CHARACTER_VERTICAL_SHIFT_PERCENTAGE` settings' values are high.
 
-#### MAXIMUM_NOISE
+### MAXIMUM_NOISE
 
 **Applies To:** CAPTCHAs
 
@@ -705,7 +712,7 @@ Sets the maximum number of layers of noise to apply to a CAPTCHA
 
 When CAPTCHAs are generated, a random number of layers of noise (from zero to this setting's value, inclusive) is applied to the image, to help obscure the text. Each layer of noise is randomly chosen to be an arc, line, or points drawn over the image at random locations or in random quantities.
 
-#### MINIMUM_COLOR_BRIGHTNESS_DIFFERENCE
+### MINIMUM_COLOR_BRIGHTNESS_DIFFERENCE
 
 **Applies To:** CAPTCHAs
 
@@ -730,7 +737,7 @@ The default value of this setting (combined with the default value of the `MINIM
 
 While this setting's default value may be good for testing, **it should be changed when using BotBlock in production**. W3 recommends setting this value to at least `125`, to ensure compliance with web accessibility standards.
 
-#### MINIMUM_COLOR_HUE_DIFFERENCE
+### MINIMUM_COLOR_HUE_DIFFERENCE
 
 **Applies To:** CAPTCHAs
 
@@ -755,7 +762,7 @@ The default value of this setting (combined with the default value of the `MINIM
 
 While this setting's default value may be good for testing, **it should be changed when using BotBlock in production**. W3 recommends setting this value to at least `500`, to ensure compliance with web accessibility standards.
 
-#### CASE_SENSITIVE
+### CASE_SENSITIVE
 
 **Applies To:** Engines
 
@@ -793,7 +800,7 @@ It is highly recommended to use the default value of `False` for this setting, e
 
 It should also be noted that when this setting is set to `False`, Python's `str.lower` method is applied to the CAPTCHA text and the proposed solution during validation, which may not work properly on all possible character sets. In those situations, you may need to change this setting to `True`.
 
-#### LIFETIME
+###06597ba1cfc49461462bfd3896895253a067ddf2 LIFETIME
 
 **Applies To:** Engines
 
@@ -814,7 +821,7 @@ Sets the lifetime (in seconds) of CAPTCHAs, after which they expire
 
 Any CAPTCHAs passed to an Engine for validation after the number of seconds indicated by this setting have passed since the CAPTCHA was created, will be declared as invalid. The default value for this setting is `600` seconds, or ten minutes, but any time between `30` seconds and `1800` seconds (30 minutes) is reasonable. If your website/project has a high level of traffic, you may wish to consider keeping the setting's value on the smaller side, to increase memory and validation efficiency.
 
-#### POOL_SIZE
+### POOL_SIZE
 
 **Applies To:** Engines
 
@@ -837,7 +844,7 @@ In order to increase efficiency and query response speeds, and allow for burstab
 
 Note: this is the only setting that cannot be dynamically updated.
 
-#### RATE_LIMIT
+### RATE_LIMIT
 
 **Applies To:** Engines
 
@@ -848,7 +855,7 @@ Note: this is the only setting that cannot be dynamically updated.
 - Of type `int`
 - A whole number
 
-***OR***
+*OR*
 
 - Of type `float`
 - Greater in value than `0.0`
@@ -875,35 +882,35 @@ All rate limiting can be disabled by making this setting's value equal to `0`.
 
 Note: the rate limiting does not apply to the initial CAPTCHA generation (to fill the pool) that occurs when an `Engine` is first instantiated. It will also not apply to the regeneration that occurs when an `Engine` instance's settings are updated.
 
-## Example CAPTCHAs
+# Example CAPTCHAs
 
 Here are some example CAPTCHAs with different settings enabled, so you can get a feel for what some of the main settings do. Many of these are using exaggerated settings that wouldn't actually be used in a production environment.
 
-#### CAPTCHAs generated using the default settings:
+### CAPTCHAs generated using the default settings:
 
 ![First Example of a Default CAPTCHA](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/default-captcha-1.png)
 ![Second Example of a Default CAPTCHA](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/default-captcha-2.png)
 ![Third Example of a Default CAPTCHA](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/default-captcha-3.png)
 
-#### CAPTCHAs generated with default settings and saved as JPEGs:
+### CAPTCHAs generated with default settings and saved as JPEGs:
 
 ![First Example of a Default CAPTCHA Saved as a JPEG](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/default-captcha-1.jpeg)
 ![Second Example of a Default CAPTCHA Saved as a JPEG](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/default-captcha-2.jpeg)
 ![Third Example of a Default CAPTCHA Saved as a JPEG](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/default-captcha-3.jpeg)
 
-#### CAPTCHAs generated with higher contrast and low noise:
+### CAPTCHAs generated with higher contrast and low noise:
 
 ![First Example of a CAPTCHA with Higher Contrast and Low Noise](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/high-contrast-low-noise-captcha-1.png)
 ![Second Example of a CAPTCHA with Higher Contrast and Low Noise](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/high-contrast-low-noise-captcha-2.png)
 ![Third Example of a CAPTCHA with Higher Contrast and Low Noise](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/high-contrast-low-noise-captcha-3.png)
 
-#### CAPTCHAs generated with high noise and character overlap enabled:
+### CAPTCHAs generated with high noise and character overlap enabled:
 
 ![First Example of a CAPTCHA with High Noise and Character Overlap](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/high-noise-character-overlap-captcha-1.png)
 ![Second Example of a CAPTCHA with High Noise and Character Overlap](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/high-noise-character-overlap-captcha-2.png)
 ![Third Example of a CAPTCHA with High Noise and Character Overlap](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/high-noise-character-overlap-captcha-3.png)
 
-#### CAPTCHAs of various sizes and text lengths:
+### CAPTCHAs of various sizes and text lengths:
 
 ![First Example of a CAPTCHA with a Random Size and Text Length](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/random-size-and-text-length-captcha-1.png)
 ![Second Example of a CAPTCHA with a Random Size and Text Length](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/random-size-and-text-length-captcha-2.png)

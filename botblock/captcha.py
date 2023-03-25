@@ -491,6 +491,13 @@ class Engine():
 
         self._start_subprocesses()
 
+    def __enter__(self):
+        """Enter the runtime context and return this object or raise an exception"""
+
+        if self._shut_down:
+            raise RuntimeError('This engine is shut down')
+        return self
+
     def _generate_captcha_instances(self):
         """Generates the Captcha instances with the correct settings"""
 
@@ -675,7 +682,7 @@ class Engine():
         """Returns (and optionally saves to disk) a new CAPTCHA and its metadata"""
 
         if self._shut_down:
-            raise RuntimeError('This engine has been shut down')
+            raise RuntimeError('This engine is shut down')
 
         new_captcha = self._fresh_captchas.get()
         captcha_as_base64 = new_captcha.base64()
@@ -704,6 +711,8 @@ class Engine():
         else:
             stats = {'Shut Down': self._shut_down}
             stats['Active Total'] = int(time() - self._creation_time)
+            if stats['Active Total'] == 0:
+                stats['Active Total'] = 0.001
             tmp_active_time = int(stats['Active Total'])
             stats['Active Days'] = tmp_active_time // (60 * 60 * 24)
             tmp_active_time -= stats['Active Days'] * 60 * 60 * 24
@@ -759,14 +768,17 @@ class Engine():
                 total_data_sizes += captcha_stats['Image Data Size']
                 total_noise_layers += captcha_stats['Layers of Noise']
                 self._fresh_captchas.put(captcha)
+            num_instances = len(captcha_instances)
+            if num_instances == 0:
+                num_instances = 1
             stats['Captcha Instance Averages'] = {
                 'Instances Analyzed': len(captcha_instances),
-                'Average Font Size': round(total_font_sizes / len(captcha_instances), 2),
-                'Character Colors Evaluated': round(total_colors_evaluated / len(captcha_instances), 2),
-                'Character Position Corrections': round(total_position_corrections / len(captcha_instances), 2),
-                'Generation': round(total_generations / len(captcha_instances), 2),
-                'Image Data Size': round(total_data_sizes / len(captcha_instances), 2),
-                'Layers of Noise': round(total_noise_layers / len(captcha_instances), 2),
+                'Average Font Size': round(total_font_sizes / num_instances, 2),
+                'Character Colors Evaluated': round(total_colors_evaluated / num_instances, 2),
+                'Character Position Corrections': round(total_position_corrections / num_instances, 2),
+                'Generation': round(total_generations / num_instances, 2),
+                'Image Data Size': round(total_data_sizes / num_instances, 2),
+                'Layers of Noise': round(total_noise_layers / num_instances, 2),
             }
             stats['Settings'] = self._settings.get_settings()
             return stats
@@ -883,7 +895,7 @@ class Engine():
         """Returns True if a CAPTCHA solution is valid, and False if not"""
 
         if self._shut_down:
-            raise RuntimeError('This engine has been shut down')
+            raise RuntimeError('This engine is shut down')
         self._validate_queries += 1
 
         try:
@@ -903,6 +915,12 @@ class Engine():
         else:
             self._blob_validation_result.get()
             return False
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Shut down the engine and exit the runtime context"""
+
+        self.shut_down()
+        return True
 
     def __repr__(self):
         """Returns a string that represents this Engine instance"""
