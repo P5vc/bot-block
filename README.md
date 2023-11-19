@@ -888,30 +888,40 @@ Here are some example CAPTCHAs with different settings enabled, so you can get a
 
 ### CAPTCHAs generated using the default settings:
 
-![First Example of a Default CAPTCHA](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/default-captcha-1.png)
-![Second Example of a Default CAPTCHA](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/default-captcha-2.png)
-![Third Example of a Default CAPTCHA](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/default-captcha-3.png)
+![First Example of a Default CAPTCHA](examples/default-captcha-1.png)
+
+![Second Example of a Default CAPTCHA](examples/default-captcha-2.png)
+
+![Third Example of a Default CAPTCHA](examples/default-captcha-3.png)
 
 ### CAPTCHAs generated with default settings and saved as JPEGs:
 
-![First Example of a Default CAPTCHA Saved as a JPEG](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/default-captcha-1.jpeg)
-![Second Example of a Default CAPTCHA Saved as a JPEG](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/default-captcha-2.jpeg)
-![Third Example of a Default CAPTCHA Saved as a JPEG](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/default-captcha-3.jpeg)
+![First Example of a Default CAPTCHA Saved as a JPEG](examples/default-captcha-1.jpeg)
+
+![Second Example of a Default CAPTCHA Saved as a JPEG](examples/default-captcha-2.jpeg)
+
+![Third Example of a Default CAPTCHA Saved as a JPEG](examples/default-captcha-3.jpeg)
 
 ### CAPTCHAs generated with higher contrast and low noise:
 
-![First Example of a CAPTCHA with Higher Contrast and Low Noise](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/high-contrast-low-noise-captcha-1.png)
-![Second Example of a CAPTCHA with Higher Contrast and Low Noise](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/high-contrast-low-noise-captcha-2.png)
-![Third Example of a CAPTCHA with Higher Contrast and Low Noise](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/high-contrast-low-noise-captcha-3.png)
+![First Example of a CAPTCHA with Higher Contrast and Low Noise](examples/high-contrast-low-noise-captcha-1.png)
+
+![Second Example of a CAPTCHA with Higher Contrast and Low Noise](examples/high-contrast-low-noise-captcha-2.png)
+
+![Third Example of a CAPTCHA with Higher Contrast and Low Noise](examples/high-contrast-low-noise-captcha-3.png)
 
 ### CAPTCHAs generated with high noise and character overlap enabled:
 
-![First Example of a CAPTCHA with High Noise and Character Overlap](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/high-noise-character-overlap-captcha-1.png)
-![Second Example of a CAPTCHA with High Noise and Character Overlap](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/high-noise-character-overlap-captcha-2.png)
-![Third Example of a CAPTCHA with High Noise and Character Overlap](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/high-noise-character-overlap-captcha-3.png)
+![First Example of a CAPTCHA with High Noise and Character Overlap](examples/high-noise-character-overlap-captcha-1.png)
+
+![Second Example of a CAPTCHA with High Noise and Character Overlap](examples/high-noise-character-overlap-captcha-2.png)
+
+![Third Example of a CAPTCHA with High Noise and Character Overlap](examples/high-noise-character-overlap-captcha-3.png)
 
 ### CAPTCHAs of various sizes and text lengths:
 
-![First Example of a CAPTCHA with a Random Size and Text Length](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/random-size-and-text-length-captcha-1.png)
-![Second Example of a CAPTCHA with a Random Size and Text Length](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/random-size-and-text-length-captcha-2.png)
-![Third Example of a CAPTCHA with a Random Size and Text Length](https://source.priveasy.org/Priveasy/bot-block/raw/branch/main/examples/random-size-and-text-length-captcha-3.png)
+![First Example of a CAPTCHA with a Random Size and Text Length](examples/random-size-and-text-length-captcha-1.png)
+
+![Second Example of a CAPTCHA with a Random Size and Text Length](examples/random-size-and-text-length-captcha-2.png)
+
+![Third Example of a CAPTCHA with a Random Size and Text Length](examples/random-size-and-text-length-captcha-3.png)
